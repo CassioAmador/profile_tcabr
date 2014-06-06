@@ -1,9 +1,9 @@
 """
-Create animation from for recreated profiles.
+Create animation from recreated density profiles.
 modifications: Cassio Amador
-TODO: check automatically number of files, to correct parameter 'sw_clustersize'.
+TODO: ???.
 ==========================
-ORIGINAL:
+ORIGINAL INFO:
 Matplotlib Animation Example
 
 author: Jake Vanderplas
