@@ -6,7 +6,7 @@ network, than MDSPlus from public machine "tcabrcl".
 Can plot channel data, downsampled.
 Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
-    Gilson Ronchi (gronchi at gmail.com)
+    Gilson Ronchi (gronchi at if.usp.br)
 TODO: clean and fix names.
 Make it possible to store locally data from MDSPlus, if wanted.
 Write specific unities for info read.

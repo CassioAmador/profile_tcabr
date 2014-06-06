@@ -4,14 +4,14 @@ vessel wall, and calibration was done with a pin.
 First uses the reference, then evaluates overlap.
 Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
-    Gilson Ronchi (gronchi at gmail.com)
+    Gilson Ronchi (gronchi at if.usp.br)
 TODO: give an option to overlap bands in the spectrogram.
 Incorporate other abel inversions.
 Have a better way to set folder to store profiles.
 Make an 'ini' file.
 """
 
-from os import path
+from os import path, getcwd
 
 import pylab as p
 from scipy import interpolate
@@ -24,10 +24,10 @@ const=95426903.18473884
 #distance (39.5 cm) in nanoseconds from vessel wall to limiter, x2
 wall_corr=2.6351563520654012
 #polynomial coeffs of order 15, for the abel integral inversion
-abel_factor=p.array([2048/6435.,429*p.pi/2096.,1024/3003.,231*p.pi/2048.,
+abel_factor=p.array([2048/6435.,429*p.pi/4096.,1024/3003.,231*p.pi/2048.,
             256/693.,63*p.pi/512,128/315.,35*p.pi/256.,16/35.,
             5*p.pi/32.,8/15.,3*p.pi/16.,2/3.,p.pi/4.,1,p.pi/2.],dtype=p.float32)
-
+    
 
 class ProcProfile(ProcSweep):
     """recreate profiles from specific shot"""
@@ -168,7 +168,7 @@ if __name__=="__main__":
     shot_number=28061
     shot=ProcProfile(shot_number)
     #choose folder to store profiles
-    lugar="/home/cassio/fisica/Reflectometria/TCABR/camador_software/proc_raw/teste"
+    lugar=path.join(getcwd(), "../post/")
     sweeps_average=4
     initial_sweep=0
     last_sweep=len(shot.points)

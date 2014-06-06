@@ -13,7 +13,7 @@ license: BSD
 Please feel free to use and modify this, but keep the above information. Thanks!
 ===========================
 """
-from os import path
+from os import path, getcwd
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -21,7 +21,7 @@ from matplotlib import animation
 
 from proc_profile import ProcProfile
 
-lugar="/home/cassio/fisica/Reflectometria/TCABR/camador_software/proc_raw/teste"
+lugar=path.join(getcwd(), "../post/")
 shot_number=28061
 sw_clustersize=4
 shot=ProcProfile(shot_number)
