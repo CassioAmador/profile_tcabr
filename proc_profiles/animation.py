@@ -21,11 +21,11 @@ from matplotlib import animation
 
 from proc_profile import ProcProfile
 
-lugar="/home/cassio/fisica/Reflectometria/TCABR/camador_software/proc_raw/teste"
+prof_folder=path.join(getcwd(), "..", "PROC")
 shot_number=28061
 sw_clustersize=4
 shot=ProcProfile(shot_number)
-ne=np.loadtxt(path.join(lugar,"ne.dat"))
+ne=np.loadtxt(path.join(prof_folderl,"ne.dat"))
 
 # First set up the figure, the axis, and the plot element we want to animate
 fig = plt.figure()
@@ -43,7 +43,7 @@ def init():
 #in the 'FuncAnimation' call
 def animate(i):
     time=shot.sweep2time(i*sw_clustersize)
-    r = np.loadtxt(path.join(lugar,"%d.dat" % (time*1e3)))
+    r = np.loadtxt(path.join(prof_folder,"%d.dat" % (time*1e3)))
     line.set_data(r, ne)
     time_text.set_text("#%s \n %.2f ms" % (shot_number,time))
     return line,
