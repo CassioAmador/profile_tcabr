@@ -129,8 +129,8 @@ class ProcProfile(ProcSweep):
                 self.ne=rf.freq2den(self.freqs)
 
     def profile_poly(self,order=9,all_shot=0):
-        """Recreates a profile fiiting the group delay with a polynomial
-        of specified order. The abel inversion is evaluated explicitly,
+        """Recreates a profile fitting the group delay with a polynomial
+        of specified order. The Abel inversion is evaluated explicitly,
         since for a poly fit the integral turns out to be another
         polynomial function. More information on the manual."""
         polynomial = p.polyfit(self.freqs*1e9,self.gd*1e-9, order)
@@ -168,7 +168,7 @@ if __name__=="__main__":
     shot_number=28061
     shot=ProcProfile(shot_number)
     #choose folder to store profiles
-    lugar=path.join(getcwd(), "../post/")
+    lugar=path.join(getcwd(), "..", "post")
     sweeps_average=4
     initial_sweep=0
     last_sweep=len(shot.points)

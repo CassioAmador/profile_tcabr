@@ -21,7 +21,7 @@ from matplotlib import animation
 
 from proc_profile import ProcProfile
 
-lugar=path.join(getcwd(), "../post/")
+lugar=path.join(getcwd(), "..", "post")
 shot_number=28061
 sw_clustersize=4
 shot=ProcProfile(shot_number)

@@ -99,7 +99,7 @@ class ProcSweep(ReadSignal):
         return newsig
 
     def plot_sweep(self,channel):
-        """Plot binary data for an especific channel."""
+        """Plot binary data for an specific channel."""
         import pylab as p
         
         if hasattr(self,'sweepfreq'):
