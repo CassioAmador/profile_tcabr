@@ -6,7 +6,7 @@ network, than MDSPlus from public machine "tcabrcl".
 Can plot channel data, downsampled.
 Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
-    Gilson Ronchi (gronchi at if.usp.br)
+    Gilson Ronchi (gronchi at gmail.com)
 TODO: clean and fix names.
 Make it possible to store locally data from MDSPlus, if wanted.
 Write specific unities for info read.
@@ -82,7 +82,11 @@ class ReadSignal():
             except:
                 # External MDSplus Server
                 conn = mds.Connection('tcabrcl.if.usp.br')
-                conn.openTree('tcabr_ref', self.shot)
+                try:
+                    conn.openTree('tcabr_ref', self.shot)
+                except mds._mdsshr.MdsException:
+                    print("No reflectometry data available for this shot.")
+                    exit()
                 mds_get=conn.get
             #Common parameters
             self.mode=mds_get('\\REFPARAMETER.REFMODE').data().strip()

@@ -34,7 +34,7 @@ class ProcSweep(ReadSignal):
         #mark only the first minimum for each trigger
         singlezeros=np.where(np.diff(zeros)>50)[0]
         self.points=np.append(zeros[0],zeros[singlezeros+1])
-        print "Number of sweeps: %s" % len(self.points)
+        print "Total number of sweeps: %s" % len(self.points)
 
     def time2sweep(self,time):
         """Converts a position in time (ms) to the correspondent
@@ -99,7 +99,7 @@ class ProcSweep(ReadSignal):
         return newsig
 
     def plot_sweep(self,channel):
-        """Plot binary data for an specific channel."""
+        """Plot binary data for an especific channel."""
         import pylab as p
         
         if hasattr(self,'sweepfreq'):

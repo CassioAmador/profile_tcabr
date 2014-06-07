@@ -4,14 +4,16 @@ vessel wall, and calibration was done with a pin.
 First uses the reference, then evaluates overlap.
 Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
-    Gilson Ronchi (gronchi at if.usp.br)
+    Gilson Ronchi (gronchi at gmail.com)
 TODO: give an option to overlap bands in the spectrogram.
 Incorporate other abel inversions.
 Have a better way to set folder to store profiles.
 Make an 'ini' file.
+Make a info file with parameters used.
 """
 
-from os import path, getcwd
+from os import path
+import time
 
 import pylab as p
 from scipy import interpolate
@@ -27,7 +29,7 @@ wall_corr=2.6351563520654012
 abel_factor=p.array([2048/6435.,429*p.pi/4096.,1024/3003.,231*p.pi/2048.,
             256/693.,63*p.pi/512,128/315.,35*p.pi/256.,16/35.,
             5*p.pi/32.,8/15.,3*p.pi/16.,2/3.,p.pi/4.,1,p.pi/2.],dtype=p.float32)
-    
+
 
 class ProcProfile(ProcSweep):
     """recreate profiles from specific shot"""
@@ -129,8 +131,8 @@ class ProcProfile(ProcSweep):
                 self.ne=rf.freq2den(self.freqs)
 
     def profile_poly(self,order=9,all_shot=0):
-        """Recreates a profile fitting the group delay with a polynomial
-        of specified order. The Abel inversion is evaluated explicitly,
+        """Recreates a profile fiiting the group delay with a polynomial
+        of specified order. The abel inversion is evaluated explicitly,
         since for a poly fit the integral turns out to be another
         polynomial function. More information on the manual."""
         polynomial = p.polyfit(self.freqs*1e9,self.gd*1e-9, order)
@@ -166,24 +168,33 @@ def poly_eval(coeffs,x):
 if __name__=="__main__":
     #change the shot number here
     shot_number=28061
+    #shot_number=28749
+    time0=time.time()
     shot=ProcProfile(shot_number)
     #choose folder to store profiles
-    lugar=path.join(getcwd(), "..", "post")
-    sweeps_average=4
+    prof_folder="/home/cassio/fisica/Reflectometria/TCABR/camador_software/proc_raw/teste"
+    sweeps_average=10
     initial_sweep=0
     last_sweep=len(shot.points)
+    initial_time=58
+    last_time=95
+    initial_sweep=shot.time2sweep(initial_time)
+    last_sweep=shot.time2sweep(last_time)
     #'all_shot' set to 1 avoids printing unnecessary information.
     shot.reference_gd(all_shot=1)
-    #change alias for desired method.
-    profile=shot.profile_poly
+    print "time for reading files: %s s" % (time.time()-time0)
+    time1=time.time()
     for sweep in p.arange(initial_sweep,last_sweep,sweeps_average):
-        print sweep
+        #print sweep
         shot.plasma_gd(sweep,sweeps_average,all_shot=1)
         shot.overlap_gd()
         shot.init_gd()
         #choose poly fit order
-        profile(order=7,all_shot=1)
+        shot.profile_poly(order=7,all_shot=1)
         #save profile in file with time in microsseconds
-        p.savetxt(path.join(lugar,"%d.dat" % (shot.sweep2time(sweep)*1e3)),shot.r)
+        p.savetxt(path.join(prof_folder,"%06d.dat" % (shot.sweep2time(sweep)*1e3)),shot.r)
     #separate density in other file, to save space.
-    p.savetxt(path.join(lugar,"ne.dat"),shot.ne_poly)
+    p.savetxt(path.join(prof_folder,"ne.dat"),shot.ne_poly)
+    #save info file with parameters used to evaluate profiles.
+    p.savetxt(path.join(prof_folder,"prof_info.dat"),[sweeps_average,initial_time,last_time])
+    print "time for Processing: %s s" % (time.time()-time1)
