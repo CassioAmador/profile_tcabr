@@ -172,7 +172,7 @@ if __name__=="__main__":
     time0=time.time()
     shot=ProcProfile(shot_number)
     #choose folder to store profiles
-    prof_folder="/home/cassio/fisica/Reflectometria/TCABR/camador_software/proc_raw/teste"
+    prof_folder=path.join(getcwd(), "..", "PROC")
     sweeps_average=10
     initial_sweep=0
     last_sweep=len(shot.points)
