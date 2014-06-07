@@ -4,7 +4,7 @@ vessel wall, and calibration was done with a pin.
 First uses the reference, then evaluates overlap.
 Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
-    Gilson Ronchi (gronchi at gmail.com)
+    Gilson Ronchi (gronchi at if.usp.br)
 TODO: give an option to overlap bands in the spectrogram.
 Incorporate other abel inversions.
 Have a better way to set folder to store profiles.
