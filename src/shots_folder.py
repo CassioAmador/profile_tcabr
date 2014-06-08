@@ -15,11 +15,11 @@ def find_folder(tipo):
     cur_dir=getcwd()
     if 'cassio' in cur_dir:
         loc='/home/cassio/fisica/Reflectometria/TCABR/dados'
-    elif 'GRS' or 'IPFNIST' in cur_dir:
+    elif 'GRS' in cur_dir or 'IPFNIST' in cur_dir:
         loc='/home/GRS/TCABR/data'
     else:
         #User defined
-        loc=""
+        loc=path.join(getcwd(), '..')
     #'data_type' is the subfolder, depending on data type.
     data_type='shots'
     if tipo=='mirror':
