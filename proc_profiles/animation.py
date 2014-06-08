@@ -23,9 +23,10 @@ from proc_profile import ProcProfile
 
 prof_folder=path.join(getcwd(), "..", "PROC")
 shot_number=28061
-sw_clustersize=4
+info=p.loadtxt(path.join(prof_folder,'prof_info.dat'))
+sw_clustersize=info[0]
 shot=ProcProfile(shot_number)
-ne=np.loadtxt(path.join(prof_folderl,"ne.dat"))
+ne=np.loadtxt(path.join(prof_folder,"ne.dat"))
 
 # First set up the figure, the axis, and the plot element we want to animate
 fig = plt.figure()
