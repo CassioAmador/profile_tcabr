@@ -13,7 +13,7 @@ license: BSD
 Please feel free to use and modify this, but keep the above information. Thanks!
 ===========================
 """
-from os import path
+from os import path, getcwd
 
 import numpy as np
 from matplotlib import pyplot as plt

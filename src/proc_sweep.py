@@ -33,7 +33,8 @@ class ProcSweep(ReadSignal):
         zeros=np.where(self.bindata['time']==mindata)[0]
         #mark only the first minimum for each trigger
         singlezeros=np.where(np.diff(zeros)>50)[0]
-        self.points=np.append(zeros[0],zeros[singlezeros+1])
+        #list starting from the 2nd sweep
+        self.points=zeros[singlezeros+1]
         print "Total number of sweeps: %s" % len(self.points)
 
     def time2sweep(self,time):
