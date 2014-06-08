@@ -12,7 +12,7 @@ Make an 'ini' file.
 Make a info file with parameters used.
 """
 
-from os import path
+from os import path, getcwd
 import time
 
 import pylab as p

@@ -31,3 +31,5 @@ develop-eggs/
 *.png
 *.mp4
 *.dat
+*.bin
+*.dat

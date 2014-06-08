@@ -12,10 +12,9 @@ Make it possible to store locally data from MDSPlus, if wanted.
 Write specific unities for info read.
 """
 
-from os.path import isfile,join
+from os import path
 from sys import exc_info
 import numpy as np
-import sqlite3
 
 try:
     import MDSplus as mds
@@ -46,8 +45,8 @@ class ReadSignal():
                     'ff':'fixed freq.','hf':'hopping freq.',}
         #checks if 'info' file is stored locally. If not, activates
         # MDSPlus mode.
-        if isfile(join(self.shot_folder,'%s_info.dat' % self.shot)):
-            infofile=open(join(self.shot_folder,'%s_info.dat' % self.shot))
+        if path.isfile(path.join(self.shot_folder,'%s_info.dat' % self.shot)):
+            infofile=open(path.join(self.shot_folder,'%s_info.dat' % self.shot))
             infolines=infofile.readlines()
             infofile.close()
             #frequency mode abbreviation
@@ -140,13 +139,41 @@ class ReadSignal():
                 conn.openTree('tcabr_ref', self.shot)
                 self.bindata[channel]= np.array(conn.get(signals[chan]))
                 conn.closeAllTrees()
+            self.save_channel(chan)
+            self.save_info_file()
         else:
-            self.arq=join(self.shot_folder,'%s_%s.bin' % (self.shot,chan))
+            self.arq=path.join(self.shot_folder,'%s_%s.bin' % (self.shot,chan))
             self.bindata[channel]=np.fromfile(self.arq,np.int16)
             print("binary file: %s\n#Samples: %s" % (self.arq,len(self.bindata[channel])))
         self.datasize=len(self.bindata[channel])
 
-#    def save_channel(self,chan):
+    def save_channel(self,chan):
+        channels={1:'K',2:'Ka',3:'ref',4:'time'}
+        arq=path.join(self.shot_folder,'%s_%s.bin' % (self.shot,chan))
+        if not path.isfile(arq):
+            self.bindata[channels[chan]].tofile(arq)
+
+    def save_info_file(self):
+        arq=path.join(self.shot_folder,'%s_info.dat' % self.shot)
+        if not path.isfile(arq):
+            arq=open(arq,'w')
+            arq.write('%s\n' % (self.mode))
+            arq.write('00:00:00 January 01 1970\n') #fake timestamp
+            if self.mode=='ff':
+                arq.write('freq: %s\n' % (self.freq))
+            elif self.mode=='hf':
+                arq.write('freq: %s\n' % (self.freq))
+                arq.write('restart_time: %s\n' % (self.restart_time))
+                arq.write('time_step: %s\n' % (self.time_step))
+            elif self.mode=='sf':    
+                arq.write('sweep: %s\n' % (self.sweep_dur))
+                arq.write('interv_sweep: %s\n' % (self.interv_sweep))
+                arq.write('freq_start: %s\n' % (self.freq_start))
+                arq.write('freq_end: %s\n' % (self.freq_end))
+            arq.write('angle: %s\n' % (self.angle))
+            arq.write('rate: %s\n' % (self.rate))
+            arq.write('time_dur: %s\n' % (1e3*self.time_dur))
+            arq.close()
 
     def plot_channel(self,chan,factor=200):
         """Plots channel data, but downsampled by a 'factor' because of
