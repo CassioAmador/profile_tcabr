@@ -6,10 +6,11 @@ Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
     Gilson Ronchi (gronchi at if.usp.br)
 TODO: give an option to overlap bands in the spectrogram.
+evaluate abel inversion separatedly from gd and initialization.
 Incorporate other abel inversions.
 Have a better way to set folder to store profiles.
 Make an 'ini' file.
-Make a info file with parameters used.
+Make a better info file with parameters used.
 """
 
 from os import path, getcwd
@@ -109,7 +110,7 @@ class ProcProfile(ProcSweep):
         gdn=(gdkn+gdkan)/2
         self.gd_m=p.concatenate((self.gd_k[9:cmin],gdn,self.gd_ka[cmax:-3]))
 
-    def init_gd(self,tipo="reta"):
+    def init_gd(self,tipo="line"):
         """Group delay initialization, default is first order. Second 
         order is also available."""
         #choose number of steps to start group_delay
@@ -137,8 +138,8 @@ class ProcProfile(ProcSweep):
         polynomial function. More information on the manual."""
         polynomial = p.polyfit(self.freqs*1e9,self.gd*1e-9, order)
         self.pol=p.poly1d(polynomial)
-        #self.gd_poly=pol(self.freqs*1e9)
-        self.freq_poly=p.linspace(0,self.freqs[-1]*1e9,num=100)
+        if not hasattr(self,'freq_poly'):
+            self.freq_poly=p.linspace(0,self.freqs[-1]*1e9,num=100)
         if not hasattr(self,'ne_poly'):
             self.ne_poly=rf.freq2den(self.freq_poly)
         if all_shot==0:
@@ -146,6 +147,28 @@ class ProcProfile(ProcSweep):
             self.gd_poly=self.pol(self.freq_poly)
         self.pol_coeffs=self.pol.coeffs*abel_factor[-order-1:]
         self.r=const*p.array([poly_eval(self.pol_coeffs,freq) for freq in self.freq_poly])
+
+    def plot_spectrogram(self,colormap=0):
+        """plots the mean spectrogram overlaped of both bands, at the
+        current time evaluated in the class. Colormap set to 0 plots
+        only contours, set to 1 plots a colormap."""
+        if colormap==0:
+            cont=p.contour
+        elif colormap==1:
+            cont=p.contourf
+        cont(self.X_k,self.Y_k,self.matrix_k_mean)
+        cont(self.X_ka,self.Y_ka,self.matrix_ka_mean)
+        p.xlabel("freq (GHz)")
+        p.ylabel("group delay (ns)")
+        p.title("# %s - time: %s ms" % (self.shot,self.sweep2time(self.sweep_cur)))
+        p.ylim(0.4,13)
+
+    def plot_groupdelay(self):
+        p.plot(self.freqs,self.gd)
+        p.plot(self.freq_poly*1e-9,self.gd_poly*1e9)
+        p.xlabel("freq (GHz)")
+        p.ylabel("group delay (ns)")
+        p.title("# %s - time: %s ms" % (self.shot,self.sweep2time(self.sweep_cur)))
 
 def find_max(matrix,spec_yaxis,ploti=0,spec_xaxis=0):
     """find the curve which follow the maximum for each spectrum"""

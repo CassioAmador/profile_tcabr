@@ -8,7 +8,6 @@ Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
     Gilson Ronchi (gronchi at if.usp.br)
 TODO: clean and fix names.
-Make it possible to store locally data from MDSPlus, if wanted.
 Write specific unities for info read.
 """
 
@@ -179,5 +178,6 @@ class ReadSignal():
         """Plots channel data, but downsampled by a 'factor' because of
         memory issues."""
         import pylab as p
-        self.times=np.arange(0,self.datasize)/(factor*self.rate*1e3)
+        self.times=np.arange(0,1+self.datasize/factor)/(self.rate*1e3)
+        print len(self.times),len(self.bindata[chan][::factor])
         p.plot(self.times,self.bindata[chan][::factor])
