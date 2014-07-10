@@ -35,7 +35,7 @@ class ProcSweep(ReadSignal):
         singlezeros=np.where(np.diff(zeros)>50)[0]
         #list starting from the 2nd sweep
         self.points=zeros[singlezeros+1]
-        print "Total number of sweeps: %s" % len(self.points)
+        print("Total number of sweeps: %s" % len(self.points))
 
     def time2sweep(self,time):
         """Converts a position in time (ms) to the correspondent
@@ -152,7 +152,7 @@ class ProcSweep(ReadSignal):
         #creates a matrix to receive the spectra
         matrix=np.empty(shape=(1+(N-window)/step,2*N))
         #loops trough all the possible windows, and evaluates the FFT.
-        for i in range(1+(N-window)/step):
+        for i in range(1+int((N-window)/step)):
             t=i*step+window/2
             new_window=window_func[N-t:N+N-t]
             new_sig=np.multiply(sig,new_window)
@@ -188,7 +188,7 @@ class ProcSweep(ReadSignal):
         if group_delay==1:
             #group delay in ns
             Y*=self.sweep_dur/(max(X)-min(X))
-        #print N,len(matrix),len(matrix[0]),len(X),len(Y)
+        #print(N,len(matrix),len(matrix[0]),len(X),len(Y))
         if ploti>=1:
             if figure==0:
                 p.figure()

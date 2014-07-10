@@ -87,7 +87,7 @@ class ReadSignal():
                     exit()
                 mds_get=conn.get
             #Common parameters
-            self.mode=mds_get('\\REFPARAMETER.REFMODE').data().strip()
+            self.mode=mds_get('\\REFPARAMETER.REFMODE').data().decode('utf-8')
             self.mode_name=mode_names[self.mode]
             self.angle=mds_get('\\REFPARAMETER.ANGLE').data() # degrees
             self.rate=np.int(mds_get('\\REFPARAMETER.RATE').data())/1e6   # MHz
@@ -179,5 +179,5 @@ class ReadSignal():
         memory issues."""
         import pylab as p
         self.times=np.arange(0,1+self.datasize/factor)/(self.rate*1e3)
-        print len(self.times),len(self.bindata[chan][::factor])
+        print(len(self.times),len(self.bindata[chan][::factor]))
         p.plot(self.times,self.bindata[chan][::factor])

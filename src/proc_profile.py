@@ -51,7 +51,7 @@ class ProcProfile(ProcSweep):
             self.read_single_sweep("K",sweep)
             self.read_single_sweep("Ka",sweep)
             if all_shot==0:
-                print self.sweep_cur
+                print(self.sweep_cur)
             matrix_k,X_k,Y_k=self.spectrogram('K',figure=sweep+1,ploti=0)
             matrix_ka,X_ka,Y_ka=self.spectrogram('Ka',figure=sweep+1,ploti=0)
             if hasattr(self,'matrix_k'):
@@ -205,7 +205,7 @@ if __name__=="__main__":
     last_sweep=shot.time2sweep(last_time)
     #'all_shot' set to 1 avoids printing unnecessary information.
     shot.reference_gd(all_shot=1)
-    print "time for reading files: %s s" % (time.time()-time0)
+    print("time for reading files: %s s" % (time.time()-time0))
     time1=time.time()
     for sweep in p.arange(initial_sweep,last_sweep,sweeps_average):
         #print sweep
@@ -220,4 +220,4 @@ if __name__=="__main__":
     p.savetxt(path.join(prof_folder,"ne.dat"),shot.ne_poly)
     #save info file with parameters used to evaluate profiles.
     p.savetxt(path.join(prof_folder,"prof_info.dat"),[sweeps_average,initial_time,last_time])
-    print "time for Processing: %s s" % (time.time()-time1)
+    print("time for Processing: %s s" % (time.time()-time1))
