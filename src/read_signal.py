@@ -1,7 +1,7 @@
 """
 Function: Read info file for a shot and binary data from specific
 channel from Reflectometry. Check data in the following order: local
-folder defined in shots_loc.py, MDSPlus database from TCABR internal
+folder defined in shots_folder.py, MDSPlus database from TCABR internal
 network, than MDSPlus from public machine "tcabrcl".
 Can plot channel data, downsampled.
 Authors:
@@ -12,6 +12,7 @@ Write specific unities for info read.
 """
 
 from os import path
+from sys import exit
 import numpy as np
 
 try:
@@ -105,7 +106,7 @@ class ReadSignal():
                 self.freq_start = np.float(mds_get('\\SWEEPFREQ.FREQ_START').data())    # GHz
                 self.freq_end = np.float(mds_get('\\SWEEPFREQ.FREQ_END').data())        # GHz
                 self.sweep_dur = np.int(mds_get('\\SWEEPFREQ.SWEEP_TIME').data())       # us
-                #self.interv_sweep = np.int(mds_get('\\SWEEPFREQ.INTERV_SWEEP').data())  # us
+                self.interv_sweep = np.int(mds_get('\\SWEEPFREQ.INTERV_SWEEP').data())  # us
             if self.__LocalMDSplusSever__:
                 print("Read from local MDSplus server")
             else:
@@ -115,7 +116,7 @@ class ReadSignal():
             print("No reflectometry data available for this shot.")
             return
 
-    def read_channel(self, chan):
+    def read_channel(self, chan,save_locally=1):
         """Try to read bin data from the channel specified, first locally, then from MDSPlus"""
         # dict to exchange between number and name of channel.
         channels = {1: 'K', 2: 'Ka', 3: 'ref', 4: 'time'}
@@ -126,13 +127,14 @@ class ReadSignal():
             channel = chan
             chan = bands[channel]
         if (chan==4) & (self.mode=="ff"):
-            print "no channel 4 data for fixed frequency shots"
+            print "no channel 4, data for fixed frequency shots"
             return
         try:
             self.arq = path.join(self.shot_folder, '%s_%s.bin' % (self.shot, chan))
             self.bindata[channel] = np.fromfile(self.arq, np.int16)
             print("binary file: %s\n#Samples: %s" % (self.arq, len(self.bindata[channel])))
         except IOError:
+            print "no local data, connecting to MDSPlus"
             signals = {1: '\\KBAND.SIGNAL', 2: '\\KABAND.SIGNAL',
                        3: '\\MIRNOV.SIGNAL', 4: '\\TRIGGER.SIGNAL'}
             try:
@@ -145,8 +147,9 @@ class ReadSignal():
                 conn.openTree('tcabr_ref', self.shot)
                 self.bindata[channel] = np.array(conn.get(signals[chan]))
                 conn.closeAllTrees()
-            self.save_channel(chan)
-            self.save_info_file()
+            if save_locally==1:
+                self.save_channel(chan)
+                self.save_info_file()
         self.datasize = len(self.bindata[channel])
 
     def save_channel(self, chan):
@@ -169,7 +172,7 @@ class ReadSignal():
                 arq.write('time_step: %s\n' % (self.time_step))
             elif self.mode == 'sf':
                 arq.write('sweep: %s\n' % (self.sweep_dur))
-                #arq.write('interv_sweep: %s\n' % (self.interv_sweep))
+                arq.write('interv_sweep: %s\n' % (self.interv_sweep))
                 arq.write('freq_start: %s\n' % (self.freq_start))
                 arq.write('freq_end: %s\n' % (self.freq_end))
             arq.write('angle: %s\n' % (self.angle))
@@ -181,6 +184,6 @@ class ReadSignal():
         """Plots channel data, but downsampled by a 'factor' because of
         memory issues."""
         import pylab as p
-        self.times = np.arange(0, 1 + self.datasize / factor) / (self.rate * 1e3)
-        print(len(self.times), len(self.bindata[chan][::factor]))
+        self.times = np.arange(0, 1 + self.datasize, factor) / (self.rate * 1e3)
+        #print(len(self.times), len(self.bindata[chan][::factor]))
         p.plot(self.times, self.bindata[chan][::factor])

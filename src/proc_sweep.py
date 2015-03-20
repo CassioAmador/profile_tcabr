@@ -1,6 +1,8 @@
 """
 Function: Process data for sweep frequency mode.
-Author: Cassio Amador (cassioamador at yahoo.com.br)
+Authors:
+    Cassio Amador (cassioamador at yahoo.com.br)
+    Gilson Ronchi (gronchi at if.usp.br)
 Thanks for G. Ronchi for debugging
 TODO: zero padding in filter should check first the size of the signal,
 so it could could choose best value depending on signal size. Maybe the
@@ -18,18 +20,19 @@ class ProcSweep(ReadSignal):
 
     """Process sweep data. All data is evaluated at its current sweep."""
 
-    def __init__(self, shot, tipo='data'):
+    def __init__(self, shot, tipo='data',save_locally=1):
         # Inherit from ReadSignal class
         ReadSignal.__init__(self, shot, tipo)
         # multiplying factor for channel frequencies
         self.chan_factor = {"K": 2, "Ka": 3, "ref": 1, "time": 1}
         # evaluate size of points per sweep
         self.sweep_size = self.rate * self.sweep_dur
+        self.save_locally=save_locally
 
     def mark_sweep_points(self):
         """Creates a list of points (called 'points') where the sweep
         started, with the 'time' channel (channel 4)."""
-        self.read_channel('time')
+        self.read_channel('time',self.save_locally)
         # find min value for data, in the first 2 sweeps
         mindata = self.bindata['time'][:self.rate * 2 * (self.sweep_dur + self.interv_sweep)].min()
         # find all points with this value
@@ -59,10 +62,14 @@ class ProcSweep(ReadSignal):
         self.sweep_cur = sweep_cur
         if not hasattr(self, 'points'):
             self.mark_sweep_points()
-        samples_ini = self.points[self.sweep_cur]
+        try:
+            samples_ini = self.points[self.sweep_cur]
+        except IndexError:
+            print len(self.points),self.sweep_cur
+            samples_ini = self.points[self.sweep_cur-self.sweep_size]
         samples_end = samples_ini + self.sweep_size
         if channel not in self.bindata.keys():
-            self.read_channel(channel)
+            self.read_channel(channel,self.save_locally)
         if hasattr(self, 'singlesweep_data') == False:
             self.singlesweep_data = {}
         self.singlesweep_data[channel] = self.bindata[channel][samples_ini:samples_end]
@@ -106,12 +113,13 @@ class ProcSweep(ReadSignal):
         """Plot binary data for an specific channel."""
         import pylab as p
 
-        if hasattr(self, 'sweepfreq'):
+        if not hasattr(self, 'sweep_freq'):
             # dict with arrays for the frequencies in each channel.
             self.sweep_freq = {}
         if channel not in self.sweep_freq.keys():
             self.sweep_freq[channel] = np.linspace(self.freq_start, self.freq_end, num=self.sweep_size) * self.chan_factor[channel]
-        p.plot(self.sweep_freq[channel], self.sweep_bindata[channel], label="Channel: %s" % channel)
+        #print len(self.sweep_freq[channel]),len(self.singlesweep_data[channel]),self.sweep_size
+        p.plot(self.sweep_freq[channel], self.singlesweep_data[channel], label="Channel: %s" % channel)
         p.xlabel("freq (GHz)")
         p.ylabel("beating signal")
 
@@ -179,18 +187,21 @@ class ProcSweep(ReadSignal):
                 p.twinx()
                 p.plot(new_window, 'r-')
                 p.draw()
-                # raw_input('')
+                raw_input('')
         if ploti == 2:
             p.ioff()
+            pass
         # transpose matrix for spectrogram.
         matrix = matrix.transpose()
         # creates arrays with beating frequency and band frequency.
         X = np.linspace(self.freq_start, self.freq_end, num=len(matrix[0])) * self.chan_factor[channel]
         # Y is the frequency, in MHz
         Y = np.linspace(0, self.rate / 2., num=zer_pad * N / 2)
+        # Inverse of dF/dt sweeping rate:
+        Dt_DF = self.sweep_dur / (max(X) - min(X))
         if group_delay == 1:
             # group delay in ns
-            Y *= self.sweep_dur / (max(X) - min(X))
+            Y *= Dt_DF
         # print(N,len(matrix),len(matrix[0]),len(X),len(Y))
         if ploti >= 1:
             if figure == 0:
@@ -206,7 +217,11 @@ class ProcSweep(ReadSignal):
             p.xlabel('sweep freq (GHz)')
             if (filtered == 1) & (group_delay == 0):
                 p.ylim(freqs[0] * 1e-3, freqs[1] * 1e-3)
+            if group_delay == 1:
+                p.ylim(freqs[0] * 1e-3 * Dt_DF, freqs[1] * 1e-3 * Dt_DF)
             # fig.subplots_adjust(left=0.15)
             # fig.subplots_adjust(bottom=0.15)
             # p.title(channel)
+            #p.figure()
+            #p.imshow(matrix,extent=[0,1,0,1])
         return matrix, X, Y
