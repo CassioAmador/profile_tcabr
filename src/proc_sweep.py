@@ -26,8 +26,8 @@ class ProcSweep(ReadSignal):
         # multiplying factor for channel frequencies
         self.chan_factor = {"K": 2, "Ka": 3, "ref": 1, "time": 1}
         # evaluate size of points per sweep
-        self.sweep_size = self.rate * self.sweep_dur
-        self.save_locally=save_locally
+        self.sweep_size = np.round(self.rate * self.sweep_dur)
+        self.save_locally = save_locally
 
     def mark_sweep_points(self):
         """Creates a list of points (called 'points') where the sweep
@@ -54,7 +54,9 @@ class ProcSweep(ReadSignal):
 
     def sweep2time(self, sweep):
         """Converts a sweep position to its position in time (ms)."""
-        return sweep * (self.sweep_dur + self.interv_sweep) * 1e-3
+        if not hasattr(self, 'points'):
+            self.mark_sweep_points()
+        return (self.points[sweep]/self.rate) * 1e-3
 
     def read_single_sweep(self, channel, sweep_cur=100):
         """Reads data for the current sweep (sweep_cur), for an
