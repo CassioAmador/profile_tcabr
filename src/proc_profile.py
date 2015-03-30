@@ -94,7 +94,6 @@ class ProcProfile(ProcSweep):
           Average is done in the first and last sweeps of the shot,
           when there is no plasma"""
         self.average_specgram(sweeps=sw_clustersize, sweep_ini=1, all_shot=all_shot)
-        self.average_specgram(sweeps=sw_clustersize, sweep_ini=-sw_clustersize, all_shot=all_shot)
         self.gd_k0 = find_max(self.matrix_k_mean, self.Y_k) - wall_corr
         self.gd_ka0 = find_max(self.matrix_ka_mean, self.Y_ka) - wall_corr
 
