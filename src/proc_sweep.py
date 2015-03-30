@@ -61,7 +61,9 @@ class ProcSweep(ReadSignal):
 
     def sweep2time(self, sweep):
         """Converts a sweep position to its position in time (ms)."""
-        return sweep * (self.sweep_dur + self.interv_sweep) * 1e-3
+        if not hasattr(self, 'points'):
+            self.mark_sweep_points()
+        return (self.points[sweep]/self.rate) * 1e-3
 
     def read_single_sweep(self, channel, sweep_cur=100):
         """Reads data for the current sweep (sweep_cur), for an
