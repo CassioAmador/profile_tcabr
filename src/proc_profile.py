@@ -406,25 +406,16 @@ class ProcProfile(ProcSweep):
         p.ylabel("group delay (ns)")
         p.title("# %s - time: %s ms" % (self.shot, self.sweep2time(self.sweep_cur)))
 
-
-def find_max(matrix, spec_yaxis, ploti=0, spec_xaxis=0):
-    """find the curve which follow the maximum for each spectrum"""
-    matrix = matrix.transpose()
-    gd = p.empty(len(matrix))
-    for r in range(len(matrix)):
-        gd[r] = spec_yaxis[p.where(matrix[r] == matrix[r].max())[0]]
-    if ploti == 1:
-        p.figure(4)
-        p.plot(spec_xaxis, gd, 'b-')
-        # p.ylim(freq_lim_min,freq_lim_max)
-    return gd
-
+def find_max(matrix, spec_yaxis):
+    """Find the curve which follow the maximum for each spectrum."""
+    return spec_yaxis[matrix.argmax(axis=0)]
 
 def poly_eval(coeffs, x):
     """evaluates polynomial for a point 'x', with custom coeffs."""
     order = len(coeffs)
     s = [coeffs[i] * (x ** (order - i - 1)) for i in range(order)]
     return sum(s)
+
 
 if __name__ == "__main__":
     # change the shot number here
