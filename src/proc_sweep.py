@@ -25,15 +25,8 @@ class ProcSweep(ReadSignal):
         ReadSignal.__init__(self, shot, tipo)
         # multiplying factor for channel frequencies
         self.chan_factor = {"K": 2, "Ka": 3, "ref": 1, "time": 1}
-        # remove initial points if f_start < 8.7 GHz
-        if self.freq_start < 8.7:
-            self.sweep_dur = self.sweep_dur * (1 - (8.7 - self.freq_start) / (self.freq_end - self.freq_start))
-            self.skip_points = np.round(self.rate * (1 - (8.7 - self.freq_start) / (self.freq_end - self.freq_start)))
-            self.freq_start = 8.7
-        else:
-            self.skip_points = 0
         # evaluate size of points per sweep
-        self.sweep_size = np.round(self.rate * self.sweep_dur) - self.skip_points
+        self.sweep_size = np.round(self.rate * self.sweep_dur)
         self.save_locally = save_locally
 
     def mark_sweep_points(self):
@@ -47,7 +40,7 @@ class ProcSweep(ReadSignal):
         # mark only the first minimum for each trigger
         singlezeros = np.where(np.diff(zeros) > 50)[0]
         # list starting from the 2nd sweep
-        self.points = zeros[singlezeros + 1] + self.skip_points
+        self.points = zeros[singlezeros + 1]
         print("Total number of sweeps: %s" % len(self.points))
 
     def time2sweep(self, time):
