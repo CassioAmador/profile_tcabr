@@ -70,7 +70,7 @@ class ProcProfile(ProcSweep):
                 print(self.sweep_cur)
             matrix_k, X_k, Y_k = self.spectrogram('K', figure=sweep + 1, normal=0, ploti=0,freqs=(3e3,15e3))
             matrix_ka, X_ka, Y_ka = self.spectrogram('Ka', figure=sweep + 1, normal=0, ploti=0, freqs=(2e3,15e3))
-            if hasattr(self, 'matrix_k'):
+            if hasattr(self, 'matrix_k_mean'):
                 self.matrix_k_mean += matrix_k
                 self.matrix_ka_mean += matrix_ka
             # if there are no averages, creates it.
