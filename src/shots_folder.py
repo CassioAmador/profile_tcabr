@@ -11,7 +11,7 @@ from os import getcwd, path
 
 def find_folder(tipo):
     """Automatically finds the folder with shot data. If not listed,
-    it needs to be written at line 26, in shots_folder.py"""
+    it needs to be written at line 22, in shots_folder.py"""
     #'loc' is the folder where the data is/will be stored.
     cur_dir = getcwd()
     if 'cassio' in cur_dir:
@@ -23,7 +23,7 @@ def find_folder(tipo):
         loc = '/home/GRS/TCABR/data'
     else:
         # User defined
-        loc = path.join(getcwd(), '..',"dados")
+        loc = path.join(getcwd(), '..')
     #'data_type' is the subfolder, depending on data type.
     data_type = 'shots'
     if tipo == 'mirror':
