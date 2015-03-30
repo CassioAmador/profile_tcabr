@@ -33,8 +33,8 @@ class ProcSweep(ReadSignal):
         else:
             self.skip_points = 0
         # evaluate size of points per sweep
-        self.sweep_size = np.round(self.rate * self.sweep_dur)
-        self.save_locally=save_locally
+        self.sweep_size = np.round(self.rate * self.sweep_dur) - self.skip_points
+        self.save_locally = save_locally
 
     def mark_sweep_points(self):
         """Creates a list of points (called 'points') where the sweep
