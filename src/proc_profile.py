@@ -19,6 +19,7 @@ import pylab as p
 import numpy as np
 import math
 from scipy import special as sp_sp
+import scipy.signal
 
 
 import ref_functions as rf
@@ -170,6 +171,29 @@ class ProcProfile(ProcSweep):
             else:
                 self.ne_max.append(float("NaN"))
 #       zero_jumps = p.where(p.diff(zero_gd) > 1)[0]
+
+    def find_ne_max2(self):
+        """Find maximum density."""
+        index = np.where(np.logical_or(self.gd_k < 0, self.gd_k > 0.95*wall_corr))[0]
+        if len(index) > 0:
+            self.ne_max = rf.freq2den(1e9*self.X_k[index[0]])
+            # No plasma?
+            if self.ne_max < 0.45e19:
+                self.ne_max = np.nan
+        else:
+            index = np.where(np.logical_or(self.gd_ka < 0, self.gd_ka > 0.95*wall_corr))[0]
+            if len(index) > 0:
+                self.ne_max = rf.freq2den(1e9*self.X_ka[index[0]])
+            else:
+                self.ne_max = np.nan
+
+    def smooth_signal(self, signal, window=7, order=3):
+        """ Smooth signal. Work for scipy version >= 0.14.0."""
+        try:
+            signal_smoothed = scipy.signal.savgol_filter(signal, window_length=window, polyorder=order)
+        except:
+            return signal
+        return signal_smoothed
 
     def adjust_gd(self):
         zeros = p.where(self.X < 18)[0]
