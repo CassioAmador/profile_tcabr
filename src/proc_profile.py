@@ -174,18 +174,39 @@ class ProcProfile(ProcSweep):
 
     def find_ne_max2(self):
         """Find maximum density."""
+        self.freqs_full = np.sort(np.concatenate((self.X_k, self.X_ka)))
+        self.ne_full = rf.freq2den(1e9*self.freqs_full)
         index = np.where(np.logical_or(self.gd_k < 0, self.gd_k > 0.95*wall_corr))[0]
         if len(index) > 0:
             self.ne_max = rf.freq2den(1e9*self.X_k[index[0]])
             # No plasma?
             if self.ne_max < 0.45e19:
+                self.no_plasma = True
                 self.ne_max = np.nan
+                self.gd2 = []
+                self.freqs2 = []
+            else:
+                self.no_plasma = False
+                self.gd2 = self.gd_k[:index[0]]
+                self.freqs2 = self.X_k[:index[0]]
         else:
             index = np.where(np.logical_or(self.gd_ka < 0, self.gd_ka > 0.95*wall_corr))[0]
             if len(index) > 0:
                 self.ne_max = rf.freq2den(1e9*self.X_ka[index[0]])
+                if index[0] == 0:
+                    self.gd2 = self.gd_k[:index[0]]
+                    self.freqs2 = self.X_k[:index[0]]
+                    return
             else:
+                # plasma density > max probing density
+                index = [-1]
                 self.ne_max = np.nan
+            freqs = np.concatenate((self.X_k, self.X_ka[:index[0]]))
+            sort_index = np.argsort(freqs)
+            self.gd2 = np.concatenate((self.gd_k, self.gd_ka[:index[0]]))[sort_index]
+            self.freqs2 = freqs[sort_index]
+            self.no_plasma = False
+        return
 
     def smooth_signal(self, signal, window=7, order=3):
         """ Smooth signal. Work for scipy version >= 0.14.0."""
@@ -303,6 +324,8 @@ class ProcProfile(ProcSweep):
             self.r[f] = r_0+const * poly_eval(self.pol.coeffs * self.abel[::-1], self.X[f])
 
     def profile_poly_2(self, order=2, all_shot=0):
+        if self.no_plasma:
+            return
         init = 2
         f_probe = self.X
         tau = self.gd_m
@@ -374,6 +397,29 @@ class ProcProfile(ProcSweep):
                         ss = self.gd[f-1]*ss + ((self.gd[f]-self.gd[f-1])/(self.freqs[f]-self.freqs[f-1])) * math.sqrt(-math.pow(self.freqs[f-1], 2) + math.pow(self.freqs[f], 2))
                 pos += ss
             self.r[f] = const * pos
+
+    def abel_transform(self, tau, f_probe, order=2, init=1):
+        """Abel invertion for group delay (tau), related to the probing frequency f_probe."""
+        f_probe = f_probe * 1e-9
+        tau = tau * 1e9
+        rc = np.zeros(len(tau))
+        tau2_coef = np.polyfit(f_probe, tau, order)
+        # init
+        if init == 1:
+            tau1_coef = np.array([np.polyval(tau2_coef, f_probe[0]) / f_probe[0], 0])
+        elif init == 2:
+            tau1_coef = np.array([np.polyval(tau2_coef, f_probe[0]) / f_probe[0] ** 2., 0, 0])
+        I1 = np.zeros(len(tau1_coef))
+        I2 = np.zeros(len(tau2_coef))
+        I3 = np.zeros(len(tau2_coef))
+        for i in range(len(f_probe)):
+            for k in range(len(tau1_coef)):
+                I1[k] = (np.power(f_probe[0], k + 1) / f_probe[i]) * (sp_sp.hyp2f1(1 / 2., (k + 1) / 2., (k + 3) / 2., np.power(f_probe[0] / f_probe[i], 2))) / (k + 1.)
+            for k in range(len(tau2_coef)):
+                I2[k] = (np.power(f_probe[0], k + 1) / f_probe[i]) * (sp_sp.hyp2f1(1 / 2., (k + 1) / 2., (k + 3) / 2., np.power(f_probe[0] / f_probe[i], 2))) / (k + 1.)
+                I3[k] = np.power(f_probe[i], k) * np.sqrt(np.pi) * sp_sp.gamma(0.5 + k / 2.) / (2. * sp_sp.gamma(1 + k / 2.))
+            rc[i] = 0.18 - 1e-9 * (3e8 / np.pi) * (np.dot(tau1_coef[::-1], I1) + np.dot(tau2_coef[::-1], I3 - I2))
+        return rc
 
     def profile_int_part(self, all_shot=0):
         # choose number of steps to start group_delay

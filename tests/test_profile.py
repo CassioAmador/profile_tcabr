@@ -4,21 +4,29 @@ sys.path.insert(0, './../src/')
 import proc_profile as pp
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
+import numpy as np
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)
-shot = pp.ProcProfile(30407)
+shot = pp.ProcProfile(31833)
 
 shot.reference_gd(all_shot=1, sw_clustersize=1)
-cluster = 10
-shot.plasma_gd(1, cluster, 1)
+cluster = 20
+shot.plasma_gd(6000, cluster, 1)
+shot.find_ne_max2()
+ne = shot.ne_full*1e-19
 
-l, = plt.plot(shot.X_k , shot.gd_k, 'b')
-m, = plt.plot(shot.X_ka , shot.gd_ka, 'r')
-plt.xlabel("freq (GHz)")
-plt.ylabel("group delay (ns)")
+r = np.nan*np.ones(len(ne))
+if not shot.no_plasma:
+    r_inver = shot.abel_transform(shot.gd2[4:]*1e-9, shot.freqs2[4:]*1e9, order=3, init=2)
+    r[:len(r_inver)] = r_inver
+
+l, = plt.plot(r, ne)
+plt.xlabel("r [m]")
+plt.ylabel("ne [$10^{19}$ m$^-3$")
 plt.title("# %s - time: %s ms" % (shot.shot, shot.sweep2time(shot.sweep_cur)))
-plt.ylim(-1, 5)
+plt.ylim(0, 2)
+plt.xlim(0, 0.2)
 
 axcolor = 'lightgoldenrodyellow'
 axfreq = plt.axes([0.25, 0.1, 0.65, 0.03], axisbg=axcolor)
@@ -28,8 +36,13 @@ sweep = Slider(axfreq, 'Sweep', 1, len(shot.points) - 1 - cluster, valinit=1, va
 
 def update(val):
     shot.plasma_gd(int(sweep.val), cluster, 1)
-    l.set_ydata(shot.gd_k)
-    m.set_ydata(shot.gd_ka)
+    shot.find_ne_max2()
+    r = np.nan*np.ones(len(ne))
+    if not shot.no_plasma:
+        r_inver = shot.abel_transform(shot.gd2[4:]*1e-9, shot.freqs2[4:]*1e9, order=2, init=1)
+        r[:len(r_inver)] = r_inver
+    l.set_xdata(r)
+    l.set_ydata(ne)
     ax.set_title("# %s - time: %.3f ms" % (shot.shot, shot.sweep2time(shot.sweep_cur)))
     fig.canvas.draw_idle()
 sweep.on_changed(update)
