@@ -94,15 +94,12 @@ class ReadSignal():
             self.rate = np.int(mds_get('\\REFPARAMETER.RATE').data()) / 1e6  # MHz
             self.time_dur = 1e-3 * mds_get('\\REFPARAMETER.SAMPLES').data() / self.rate
             if self.mode == 'ff':
-                #print("Fixed Freq. enable")
                 self.freq = mds_get('\\FIXEDFREQ.FREQUENCY').data()
             elif self.mode == 'hf':
-                #print("Hopping Freq. enable")
                 self.freq = mds_get('\\HOPPINGFREQ.FREQ_TABLE').data()            # GHz
                 self.restart_time = mds_get('\\HOPPINGFREQ.RESTART_TIME').data()  # us
                 self.time_step = mds_get('\\HOPPINGFREQ.TIME_STEP').data()        # us
             elif self.mode == 'sf':
-                #print('Sweep Freq. enable')
                 self.freq_start = np.float(mds_get('\\SWEEPFREQ.FREQ_START').data())    # GHz
                 self.freq_end = np.float(mds_get('\\SWEEPFREQ.FREQ_END').data())        # GHz
                 self.sweep_dur = np.int(mds_get('\\SWEEPFREQ.SWEEP_TIME').data())       # us
@@ -147,7 +144,7 @@ class ReadSignal():
                 conn.openTree('tcabr_ref', self.shot)
                 self.bindata[channel] = np.array(conn.get(signals[chan]))
                 conn.closeAllTrees()
-            if save_locally==1:
+            if save_locally == 1:
                 self.save_channel(chan)
                 self.save_info_file()
         self.datasize = len(self.bindata[channel])
@@ -185,5 +182,4 @@ class ReadSignal():
         memory issues."""
         import pylab as p
         self.times = np.arange(0, 1 + self.datasize, factor) / (self.rate * 1e3)
-        #print(len(self.times), len(self.bindata[chan][::factor]))
         p.plot(self.times, self.bindata[chan][::factor])

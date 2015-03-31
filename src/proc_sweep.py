@@ -20,7 +20,7 @@ class ProcSweep(ReadSignal):
 
     """Process sweep data. All data is evaluated at its current sweep."""
 
-    def __init__(self, shot, tipo='data',save_locally=1):
+    def __init__(self, shot, tipo='data', save_locally=1):
         # Inherit from ReadSignal class
         ReadSignal.__init__(self, shot, tipo)
         # multiplying factor for channel frequencies
@@ -30,9 +30,9 @@ class ProcSweep(ReadSignal):
         self.save_locally = save_locally
 
     def mark_sweep_points(self):
-        """Creates a list of points (called 'points') where the sweep
+        """Create a list of points (called 'points') where the sweep
         started, with the 'time' channel (channel 4)."""
-        self.read_channel('time',self.save_locally)
+        self.read_channel('time', self.save_locally)
         # find min value for data, in the first 2 sweeps
         mindata = self.bindata['time'][:self.rate * 2 * (self.sweep_dur + self.interv_sweep)].min()
         # find all points with this value
@@ -44,7 +44,7 @@ class ProcSweep(ReadSignal):
         print("Total number of sweeps: %s" % len(self.points))
 
     def time2sweep(self, time):
-        """Converts a position in time (ms) to the correspondent
+        """Convert a position in time (ms) to the correspondent
         sweep position."""
         if not hasattr(self, 'points'):
             self.mark_sweep_points()
@@ -53,13 +53,13 @@ class ProcSweep(ReadSignal):
         return self.sweep_cur
 
     def sweep2time(self, sweep):
-        """Converts a sweep position to its position in time (ms)."""
+        """Convert a sweep position to its position in time (ms)."""
         if not hasattr(self, 'points'):
             self.mark_sweep_points()
         return (self.points[sweep]/self.rate) * 1e-3
 
     def read_single_sweep(self, channel, sweep_cur=100):
-        """Reads data for the current sweep (sweep_cur), for an
+        """Read data for the current sweep (sweep_cur), for an
         specific channel"""
         self.sweep_cur = sweep_cur
         if not hasattr(self, 'points'):
@@ -67,11 +67,11 @@ class ProcSweep(ReadSignal):
         try:
             samples_ini = self.points[self.sweep_cur]
         except IndexError:
-            print len(self.points),self.sweep_cur
+            print(len(self.points), self.sweep_cur)
             samples_ini = self.points[self.sweep_cur-self.sweep_size]
         samples_end = samples_ini + self.sweep_size
         if channel not in self.bindata.keys():
-            self.read_channel(channel,self.save_locally)
+            self.read_channel(channel, self.save_locally)
         if hasattr(self, 'singlesweep_data') == False:
             self.singlesweep_data = {}
         self.singlesweep_data[channel] = self.bindata[channel][samples_ini:samples_end]
@@ -120,7 +120,6 @@ class ProcSweep(ReadSignal):
             self.sweep_freq = {}
         if channel not in self.sweep_freq.keys():
             self.sweep_freq[channel] = np.linspace(self.freq_start, self.freq_end, num=self.sweep_size) * self.chan_factor[channel]
-        #print len(self.sweep_freq[channel]),len(self.singlesweep_data[channel]),self.sweep_size
         p.plot(self.sweep_freq[channel], self.singlesweep_data[channel], label="Channel: %s" % channel)
         p.xlabel("freq (GHz)")
         p.ylabel("beating signal")
@@ -128,7 +127,7 @@ class ProcSweep(ReadSignal):
     def spectrogram(self, channel, window_scale=4, step_scale=16, log=0,
                     group_delay=1, ploti=1, figure=0, normal=1, filtered=1,
                     freqs=(1e3, 15e3)):
-        """Evaluates and plot spectrogram (SFFT) of beating signal.
+        """Evaluate and plot spectrogram (SFFT) of beating signal.
         Some parameters listed (others can be found in the function):
         group_delay=1 evaluates group delay.
                     0 evaluates beating frequency
@@ -162,9 +161,9 @@ class ProcSweep(ReadSignal):
             if a == '0':
                 ploti = 1
                 p.ioff()
-        # creates a matrix to receive the spectra
+        # create a matrix to receive the spectra
         matrix = np.empty(shape=(1 + (N - window) / step, 2 * N))
-        # loops trough all the possible windows, and evaluates the FFT.
+        # loop trough all the possible windows, and evaluates the FFT.
         for i in range(1 + int((N - window) / step)):
             t = i * step + window / 2
             new_window = window_func[N - t:N + N - t]
@@ -210,9 +209,7 @@ class ProcSweep(ReadSignal):
                 p.figure()
             else:
                 p.figure(figure)
-            ctr = p.contourf(X, Y, matrix)
-            # creates colorbar
-            #colorbar=p.colorbar(ctr, shrink=0.8, extend='both',format='%.3g')
+            p.contourf(X, Y, matrix)
             p.ylabel('beating freq (MHz)')
             if group_delay == 1:
                 p.ylabel('group delay (ns)')
@@ -221,9 +218,4 @@ class ProcSweep(ReadSignal):
                 p.ylim(freqs[0] * 1e-3, freqs[1] * 1e-3)
             if group_delay == 1:
                 p.ylim(freqs[0] * 1e-3 * Dt_DF, freqs[1] * 1e-3 * Dt_DF)
-            # fig.subplots_adjust(left=0.15)
-            # fig.subplots_adjust(bottom=0.15)
-            # p.title(channel)
-            #p.figure()
-            #p.imshow(matrix,extent=[0,1,0,1])
         return matrix, X, Y
