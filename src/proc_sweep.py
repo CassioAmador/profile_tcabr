@@ -3,7 +3,6 @@ Function: Process data for sweep frequency mode.
 Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
     Gilson Ronchi (gronchi at if.usp.br)
-Thanks for G. Ronchi for debugging
 TODO: zero padding in filter should check first the size of the signal,
 so it could could choose best value depending on signal size. Maybe the
 same for padding in spectrogram.
