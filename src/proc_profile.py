@@ -55,12 +55,12 @@ class ProcProfile(ProcSweep):
             makedirs(self.shotproc_folder)
             makedirs(self.prof_folder)
 
-    def average_specgram(self, sweeps=8, sweep_ini=20, all_shot=0):
+    def average_specgram(self, sweeps=8, sweep_ini=20, all_shot=0, freq_min=(2*8.7, 0), freq_max=(2*14, 3*14)):
         """Average spectrograms of a specified cluster of sweeps."""
         # if the class has already a mean stored, deletes it.
-        if hasattr(self, "gd_k"):
+        if hasattr(self, "matrix_k_mean"):
             del(self.matrix_k_mean)
-        if hasattr(self, "gd_ka"):
+        if hasattr(self, "matrix_ka_mean"):
             del(self.matrix_ka_mean)
         # makes the spectrogram for each sweep.
         for sweep in range(sweep_ini, sweep_ini + sweeps):
@@ -71,15 +71,15 @@ class ProcProfile(ProcSweep):
             matrix_k, X_k, Y_k = self.spectrogram('K', figure=sweep + 1, normal=0, ploti=0, freqs=(3e3, 15e3))
             matrix_ka, X_ka, Y_ka = self.spectrogram('Ka', figure=sweep + 1, normal=0, ploti=0, freqs=(2e3, 15e3))
             if hasattr(self, 'matrix_k_mean'):
-                self.matrix_k_mean += matrix_k
-                self.matrix_ka_mean += matrix_ka
+                self.matrix_k_mean += matrix_k[:, np.logical_or(X_k > freq_min[0], X_k < freq_max[0])]
+                self.matrix_ka_mean += matrix_ka[:, np.logical_or(X_ka > freq_min[1], X_ka < freq_max[1])]
             # if there are no averages, creates it.
             else:
-                self.matrix_k_mean = matrix_k.copy()
-                self.X_k = X_k.copy()
+                self.matrix_k_mean = matrix_k[:, np.logical_or(X_k > freq_min[0], X_k < freq_max[0])].copy()
+                self.X_k = X_k[np.logical_or(X_k > freq_min[0], X_k < freq_max[0])].copy()
                 self.Y_k = Y_k.copy()
-                self.matrix_ka_mean = matrix_ka.copy()
-                self.X_ka = X_ka.copy()
+                self.matrix_ka_mean = matrix_ka[:, np.logical_or(X_ka > freq_min[1], X_ka < freq_max[1])].copy()
+                self.X_ka = X_ka[np.logical_or(X_ka > freq_min[1], X_ka < freq_max[1])].copy()
                 self.Y_ka = Y_ka.copy()
 
         self.matrix_k_mean /= sweeps
