@@ -1,3 +1,5 @@
+"""Test maximum density."""
+
 import sys
 sys.path.insert(0, './../src/')
 
@@ -8,11 +10,11 @@ import numpy as np
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)
 shot = pp.ProcProfile(30407)
-sweeps_average = 20
+sweeps_average = 33
 
 initial_sweep = shot.time2sweep(32)
 last_sweep = shot.time2sweep(140)
-shot.reference_gd(all_shot=1)
+shot.reference_gd(all_shot=1, sw_clustersize=sweeps_average)
 sweeps = np.arange(initial_sweep, last_sweep, sweeps_average)
 ne_max = np.zeros(len(sweeps))
 t = np.zeros(len(sweeps))
