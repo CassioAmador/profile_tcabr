@@ -482,13 +482,18 @@ def poly_eval(coeffs, x):
 
 
 if __name__ == "__main__":
+    # '1': set processing in mdsplus space only.
+    mdsplus_proc=0
+    import sys
+    # work properly with save_locally parameter
+    save=0
+    if mdsplus_proc==0:
+        save=1
     # change the shot number here
-    shot_number = 32210
+    shot_number = 32211
     # shot_number=28749
     time0 = time.time()
-    shot = ProcProfile(shot_number, save_locally=0)
-    # choose folder to store profiles
-    sweeps_average = 10
+    shot = ProcProfile(shot_number, save_locally=save)
     initial_sweep = 0
     last_sweep = len(shot.points)
     initial_time = 0
@@ -497,19 +502,50 @@ if __name__ == "__main__":
     last_sweep = shot.time2sweep(last_time)
 #   'all_shot' set to 1 avoids printing unnecessary information.
     shot.reference_gd(all_shot=1)
-    print("time for reading files: %s s" % (time.time() - time0))
-    time1 = time.time()
-    for sweep in p.arange(initial_sweep, last_sweep, sweeps_average):
+    if mdsplus_proc==0:
+        sweeps_average = 10 
+        sweeps_array=p.arange(initial_sweep, last_sweep, sweeps_average)
+        print("time for reading files: %s s" % (time.time() - time0))
+        time1 = time.time()
+    else:
+        interval_time=1 
+        # sweeps average each milissecond
+        sweeps_average = int(1*1e3/(shot.sweep_dur + shot.interv_sweep))
+        sweeps_array=p.arange(initial_sweep, last_sweep, sweeps_average)
+        #matrix of position by time by density. Density has size, the same as ne_poly
+        #HERE THERE BE DRAGONS. OR PROBLEMS WITH NE_POLY AND SHOT.R SIZE.
+        shot.matrix=p.zeros((len(sweeps_array),98))
+        i=0
+    for sweep in sweeps_array:
         # print sweep
         shot.plasma_gd(sweep, sweeps_average, all_shot=1)
         shot.overlap_gd()
         shot.init_gd()
         # choose poly fit order
         shot.profile_poly_2(order=2, all_shot=1)
-        # save profile in file with time in microsseconds
-        p.savetxt(path.join(shot.prof_folder, "%06d.dat" % (shot.sweep2time(sweep) * 1e3)), shot.r)
-    # separate density in other file, to save space.
-    p.savetxt(path.join(shot.prof_folder, "ne.dat"), shot.ne_poly)
-    # save info file with parameters used to evaluate profiles.
-    p.savetxt(path.join(shot.prof_folder, "prof_info.dat"), [sweeps_average, initial_time, last_time])
-    print("time for Processing: %s s" % (time.time() - time1))
+        if mdsplus_proc==0:
+            # save profile in file with time in microsseconds
+            p.savetxt(path.join(shot.prof_folder, "%06d.dat" % (shot.sweep2time(sweep) * 1e3)), shot.r)
+        else:
+            shot.matrix[i]=shot.r
+            i=+1
+    if mdsplus_proc==0:
+        # separate density in other file, to save space.
+        p.savetxt(path.join(shot.prof_folder, "ne.dat"), shot.ne_poly)
+        # save info file with parameters used to evaluate profiles.
+        p.savetxt(path.join(shot.prof_folder, "prof_info.dat"), [sweeps_average, initial_time, last_time])
+        print("time for Processing: %s s" % (time.time() - time1)) 
+    else:
+        tree_name = "tcabr_ref"
+        tree = MDSplus.Tree(tree_name, self.shot)
+        # time array.
+        node = tree.getNode("\\prof_time.signal")
+        data = MDSplus.Float32Array(np.arange(initial_time,last_time,interval_time),dtype=np.float32)
+        data.setUnits("ms")
+        # density array. It will the same for all shot. No unit
+        node = tree.getNode("\\prof_density.signal")
+        data = MDSplus.Float32Array(shot.ne_poly,dtype=np.float32)
+        # position matrix
+        node = tree.getNode("\\prof_position.signal")
+        data = MDSplus.Float32Array(shot.matrix,dtype=np.float32)
+        data.setUnits("m")
