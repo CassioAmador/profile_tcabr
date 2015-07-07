@@ -512,9 +512,9 @@ if __name__ == "__main__":
         # sweeps average each milissecond
         sweeps_average = int(1*1e3/(shot.sweep_dur + shot.interv_sweep))
         sweeps_array=p.arange(initial_sweep, last_sweep, sweeps_average)
-+        #matrix of position by time by density. Density has size, the same as ne_poly
-+        #HERE THERE BE DRAGONS. OR PROBLEMS WITH NE_POLY AND SHOT.R SIZE.
-+        shot.matrix=p.zeros((len(sweeps_array),98))
+        #matrix of position by time by density. Density has size, the same as ne_poly
+        #HERE THERE BE DRAGONS. OR PROBLEMS WITH NE_POLY AND SHOT.R SIZE.
+        shot.matrix=p.zeros((len(sweeps_array),98))
         i=0
     for sweep in sweeps_array:
         # print sweep
