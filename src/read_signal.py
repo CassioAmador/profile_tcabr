@@ -20,7 +20,7 @@ try:
 except ImportError:
     print("No python module for MDSplus.")
 
-import shots_folder
+import read_shots_folder
 
 class ReadSignal():
 
@@ -28,7 +28,7 @@ class ReadSignal():
         if shot == '0':
             print("Select a shot number")
             return
-        self.shot_folder = shots_folder.find_folder(acq_mode)
+        self.shot_folder = read_shots_folder.set_folder(acq_mode)
         self.acq_mode = acq_mode
         self.shot = shot
         self.__readMDSplus__ = False
@@ -124,14 +124,14 @@ class ReadSignal():
             channel = chan
             chan = bands[channel]
         if (chan==4) & (self.mode=="ff"):
-            print "no channel 4, data for fixed frequency shots"
+            print("no channel 4, data for fixed frequency shots")
             return
         try:
             self.arq = path.join(self.shot_folder, '%s_%s.bin' % (self.shot, chan))
             self.bindata[channel] = np.fromfile(self.arq, np.int16)
             print("binary file: %s\n#Samples: %s" % (self.arq, len(self.bindata[channel])))
         except IOError:
-            print "no local data, connecting to MDSPlus"
+            print("no local data, connecting to MDSPlus")
             signals = {1: '\\KBAND.SIGNAL', 2: '\\KABAND.SIGNAL',
                        3: '\\MIRNOV.SIGNAL', 4: '\\TRIGGER.SIGNAL'}
             try:
