@@ -11,6 +11,7 @@ from os import path, pardir, makedirs
 def set_folder(tipo):
     """Sets data folder to 'parent directory + SHOTS + data type'"""
     loc = path.join(pardir, 'SHOTS')
+    makedirs(loc,exist_ok=True)
     #'data_type' is the subfolder, depending on data type. default is a shot.
     data_type = 'shots'
     if tipo == 'mirror':
@@ -19,12 +20,13 @@ def set_folder(tipo):
         data_type = 'tests'
     elif tipo == 'clean':
         data_type = 'cleaning_plasma'
+    folder = path.join(loc, data_type)
+    makedirs(folder, exist_ok = True)
     return path.join(loc, data_type)
 
 def check_prof_folder(shot):
-    prof_folder = path.join(pardir, "PROC_FILES", "%s" % shot)
-    if path.exists(prof_folder):
-        pass
-    else:
-        makedirs(prof_folder)
+    loc = path.join(pardir, "PROC_FILES")
+    prof_folder = path.join(loc, "%s" % shot)
+    makedirs(loc, exist_ok = True))
+    makedirs(prof_folder, exist_ok = True)
     return prof_folder
