@@ -27,7 +27,7 @@ def save_info(prof_folder,sweeps_average,initial_time,last_time):
 
 if __name__ == "__main__":
     # change the shot number here
-    shot_number = 32111
+    shot_number = 32211
     # save data locally?
     save = 1
     time_on = 0

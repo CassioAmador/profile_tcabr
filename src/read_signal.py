@@ -88,7 +88,7 @@ class ReadSignal():
                     exit()
                 mds_get = conn.get
             # Common parameters
-            self.mode = mds_get('\\REFPARAMETER.REFMODE').data()
+            self.mode = mds_get('\\REFPARAMETER.REFMODE').data().decode('utf-8')
             self.mode_name = mode_names[self.mode]
             self.angle = mds_get('\\REFPARAMETER.ANGLE').data()  # degrees
             self.rate = np.int(mds_get('\\REFPARAMETER.RATE').data()) / 1e6  # MHz
