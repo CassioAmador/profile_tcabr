@@ -27,6 +27,6 @@ def set_folder(tipo):
 def check_prof_folder(shot):
     loc = path.join(pardir, "PROC_FILES")
     prof_folder = path.join(loc, "%s" % shot)
-    makedirs(loc, exist_ok = True))
+    makedirs(loc, exist_ok = True)
     makedirs(prof_folder, exist_ok = True)
     return prof_folder

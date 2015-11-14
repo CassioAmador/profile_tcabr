@@ -53,7 +53,6 @@ if __name__ == "__main__":
         prof_folder=check_prof_folder(shot_number)
         save_info(prof_folder,sweeps_average,initial_time,last_time)
         save_density(prof_folder,shot.ne)
-        exit()
 
     for sweep in sweeps_array:
         print("Sweep: ", sweep)

@@ -99,13 +99,13 @@ class ProcGroupDelay(ProcSweep):
                 self.cmin = (abs(self.X['K'] - min(self.X['Ka']))).argmin()
                 self.cmax = (abs(self.X['Ka'] - max(self.X['K']))).argmin()
                 # create an even spaced array in the overlap region
-                xn = p.arange(self.X['K'][self.cmin], self.X['Ka'][self.cmax], self.X['Ka'][1] - self.X['Ka'][0])
+                xn = np.arange(self.X['K'][self.cmin], self.X['Ka'][self.cmax], self.X['Ka'][1] - self.X['Ka'][0])
                 # frequency array for all bands.
-                self.freqs_overlap = p.concatenate((self.X['K'][limit_min:self.cmin], xn, self.X['Ka'][self.cmax:limit_max]))
+                self.freqs_overlap = np.concatenate((self.X['K'][limit_min:self.cmin], xn, self.X['Ka'][self.cmax:limit_max]))
             else:
                 self.cmin=None
                 self.cmax=None
-                self.freqs_overlap = p.concatenate((xk[limit_min:self.cmin], xka[self.cmax:limit_max]))
+                self.freqs_overlap = np.concatenate((xk[limit_min:self.cmin], xka[self.cmax:limit_max]))
             self.ne = rf.freq2den(self.freqs_overlap*1e9)
 
 

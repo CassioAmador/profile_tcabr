@@ -6,6 +6,7 @@ Authors:
 TODO: ??
 """
 
+import numpy as np
 import pylab as p
 from scipy import integrate
 
@@ -43,16 +44,16 @@ class Bottollier(ProcGroupDelay):
             phase_prev=0
         else:
             phase_prev=self.area_prev(n,freqs_prob,pos)
-        return pos[n-1]+(phase_cur-phase_prev+p.pi/2)/(area_dif)
+        return pos[n-1]+(phase_cur-phase_prev+np.pi/2)/(area_dif)
 
     def find_pos(self,nX,phase):
         """Iterates over all frequencies to evaluate their reflection distance"""
 
-        pos=p.zeros(len(nX))
-        r0=0
+        pos = np.zeros(len(nX))
+        r0 = 0
         for n in range(1,len(nX)):
-            pos[n]=self.pos_eval(n,nX,pos,phase[n])
-        return pos+r0
+            pos[n] = self.pos_eval(n,nX,pos,phase[n])
+        return pos + r0
 
     def profile(self,sweep,sweeps=4,all_shot=0):
         """Creates profile and the density array"""
@@ -65,8 +66,8 @@ class Bottollier(ProcGroupDelay):
                 dif_X=(self.X[channel][1]-self.X[channel][0])/2
                 self.nX[channel]=self.X[channel][:-1]+dif_X
                 if channel=='K':
-                    self.nX[channel]=p.concatenate(([0],self.nX[channel]))
-            self.nX['2bands']=p.concatenate((self.nX['K'][:self.cmin],self.nX['Ka']))
+                    self.nX[channel]=np.concatenate(([0],self.nX[channel]))
+            self.nX['2bands']=np.concatenate((self.nX['K'][:self.cmin],self.nX['Ka']))
             self.ne = rf.freq2den(self.nX['2bands']*1e9)
 
         phase_dif_k=self.gd_k/self.Dt_DF['K']
@@ -82,11 +83,11 @@ class Bottollier(ProcGroupDelay):
         signal at the overlap. """
 
         if self.cmin!=None:
-            np=p.interp(self.nX['Ka'][:self.cmax], self.nX['K'][self.cmin:], self.phi_k[self.cmin:])
-            npp=(np+self.phi_ka[:self.cmax])/2
-            self.phase=p.concatenate((self.phi_k[:self.cmin],npp,self.phi_ka[self.cmax:]))
+            phase_interp = np.interp(self.nX['Ka'][:self.cmax], self.nX['K'][self.cmin:], self.phi_k[self.cmin:])
+            phase_over = (phase_interp+self.phi_ka[:self.cmax])/2
+            self.phase = np.concatenate((self.phi_k[:self.cmin], phase_over, self.phi_ka[self.cmax:]))
         else:
-            self.phase=p.concatenate((self.phi_k_kself.phi_ka))
+            self.phase = np.concatenate((self.phi_k,self.phi_ka))
 
     def plot_phase(self):
         #p.plot(self.nX['Ka'][:self.cmax],npp, marker='o', linestyle='-', color='r')
