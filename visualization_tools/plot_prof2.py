@@ -1,3 +1,4 @@
+ARRUMAR
 import Pmw
 import Tkinter as tk
 import matplotlib as mpl
@@ -7,75 +8,57 @@ from matplotlib.widgets import Slider, Button
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from os import chdir,listdir,path,getcwd
 
-import read_signal as rs
-
 class PlotWindow():
-    def __init__(self,shot_number=0,text_box=0):
-        self.shot_number=shot_number
-        self.st=text_box
-        self.proc_folder=path.join(getcwd(), "..", "PROC")
-        chdir(self.proc_folder)
-        self.read_data()
+    def __init__(self,shot=0,plot_frame=0):
+        self.shot=shot
+        self.frame=plot_frame
         self.plot_profiles()
-    
-    def changeshot(self,shot_number):
-        if shot_number!=self.shot_number:
-            self.shot_number=shot_number
-            self.read_data()
-            self.plot_update(0)
-
-    def read_data(self):
-        shotfile=rs.ReadSignal(self.shot_number)
-        self.st.clear()
-        info={}
-        self.st.appendtext("\nAcq. Rate: %s" % shotfile.rate)
-        self.st.appendtext("\nK band: %s" % shotfile.freq_end)
-        self.st.appendtext("\nSweep_dur: %s " % shotfile.sweep_dur)
-        self.st.appendtext("\nInterv sweep: %s" % shotfile.interv_sweep)
-        #self.info=shotfile.info
-        #print shotfile.info
-        prof_folder=path.join(self.proc_folder,"%s" % self.shot_number,"level_0")
+    def changeshot(self,shot):
+        self.shot=shot
+    def plot_profiles(self):
+        prof_folder=path.join(getcwd(), "..", "PROC","%s" % self.shot,"level_0")
         chdir(prof_folder)
-        self.ne=np.loadtxt('ne.dat')
-        self.prof_info=np.loadtxt('prof_info.dat')
-        print self.prof_info
+        ne=np.loadtxt('ne.dat')
+        info=np.loadtxt('prof_info.dat')
 
         prof_list=listdir(prof_folder)
         prof_list.sort()
-        self.position=np.empty(shape=((len(prof_list)-2),len(self.ne)))
-        self.times=np.empty(len(prof_list)-2)
+        position=np.empty(shape=((len(prof_list)-2),len(ne)))
+        times=np.empty(len(prof_list)-2)
 
         i=0
         for r_file in prof_list:
             name=r_file.strip('.dat')
             if name not in ('prof_info','ne'):
-                self.position[i]=np.loadtxt(r_file)*1e2
-                self.times[i]=name
-                i+=1        
-    
-    def plot_profiles(self):
-        self.fig, self.ax = plt.subplots()
+                position[i]=np.loadtxt(r_file)*1e2
+                times[i]=name
+                i+=1
+
+        self.fig=plt.figure()
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.frame)
+        self.canvas.get_tk_widget().grid(column=0,row=1)
+        ax = self.fig.add_subplot(111)
         plt.subplots_adjust(left=0.25, bottom=0.25)
-        self.l, = plt.plot(self.position[0],self.ne, lw=2, color='blue')
-        plt.axis([0, 20, self.ne[0],self.ne[-1]])
-        self.ax.legend(loc='upper left')
-        self.ax.set_xlabel('r (cm)')
-        self.ax.set_ylabel('density (10^19 m^-3)')
-        self.ax.set_title("# %s" % self.shot_number)
+        l, = ax.plot(position[0],ne, lw=2, color='blue')
+        ax.axis([0, 20, ne[0],ne[-1]])
+        ax.legend(loc='upper left')
+        ax.set_xlabel('r (cm)')
+        ax.set_ylabel('density (10^19 m^-3)')
+        ax.set_title("# %s" % self.shot)
 
         axcolor = 'lightgoldenrodyellow'
-        self.axfreq = plt.axes([0.25, 0.1, 0.65, 0.03], axisbg=axcolor)
+        axfreq = mpl.axes.Axes(self.fig,[0.25, 0.4, 0.65, 0.03], axisbg=axcolor)
 
-        self.stime = Slider(self.axfreq, 'time', self.prof_info[1], self.prof_info[2], valinit=self.prof_info[1]+(self.prof_info[2]-self.prof_info[1])*0.2)
+        stime = Slider(axfreq, 'time', info[1], info[2], valinit=info[1]+(info[2]-info[1])*0.2)
 
-        self.stime.on_changed(self.plot_update)
+        def update(val):
+            time = stime.val
+            i=(abs(time*1e3-times)).argmin()
+            l.set_xdata(position[i])
+            self.fig.canvas.draw_idle()
+        stime.on_changed(update)
 
-    def plot_update(self,val):
-        time = self.stime.val
-        i=(abs(time*1e3-self.times)).argmin()
-        self.l.set_xdata(self.position[i])
-        self.fig.canvas.draw_idle()
-
+        plt.show()
 
 
 class PlotProf():
@@ -139,13 +122,13 @@ class PlotProf():
         self.entries[key].pack(side= 'top', fill= 'x', expand=1, padx=10, pady=5)
 
     def choose_shot(self):
-        self.shot_number=int(self.entries['shot'].get())
+        self.shot=int(self.entries['shot'].get())
         self.st.clear()
         self.st.appendtext('Reflectometry parameters:')
         if hasattr(self,'plotwindow'):
-            self.plotwindow.changeshot(self.shot_number)
+            self.plotwindow.changeshot(self.shot)
         else:
-            self.plotwindow=PlotWindow(self.shot_number,self.st)
+            self.plotwindow=PlotWindow(self.shot,self.plot_frame)
 
     def close(self):
         self.root.destroy()
@@ -166,5 +149,4 @@ if __name__== '__main__':
     root.title('Ref Profiles')
     Pmw.initialise(fontScheme='pmw2')
     plotprof=PlotProf(root)
-    plt.ion()
     root.mainloop()

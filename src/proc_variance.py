@@ -18,7 +18,7 @@ class Plasma_Behavior(ProcProfile):
         last_sweep = shot.time2sweep(last_time)
         #'all_shot' set to 1 avoids printing unnecessary information.
         shot.reference_gd(all_shot=1)
-        print("time for reading files: %s s" % (time.time() - time0))
+        print("time for reading files: {0} s".format(time.time() - time0))
         time1 = time.time()
         for sweep in p.arange(initial_sweep, last_sweep, sweeps_average):
             # print sweep
@@ -33,7 +33,7 @@ class Plasma_Behavior(ProcProfile):
         p.savetxt(path.join(prof_folder, "ne.dat"), shot.ne_poly)
         # save info file with parameters used to evaluate profiles.
         p.savetxt(path.join(prof_folder, "prof_info.dat"), [sweeps_average, initial_time, last_time])
-        print("time for Processing: %s s" % (time.time() - time1))
+        print("time for Processing: {0} s".format(time.time() - time1))
 
     def plot_variance(self,X,mat):
         var=p.var(mat,0, dtype=p.float64)

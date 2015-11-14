@@ -1,3 +1,4 @@
+ARRUMAR
 """
 Given a shot_number, it reads all files in 'prof_folder' to plot it.
 With a slider, it is possible to change time of profile with a mouse.

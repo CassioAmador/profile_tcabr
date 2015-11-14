@@ -9,32 +9,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 from os import chdir,listdir,path,getcwd
-import Tkinter as tk
+import tkinter as tk
 
 
-shot_number=32214
-prof_folder=path.join(getcwd(), "..", "PROC","%s" % shot_number,"level_0")
+shot_number=32211
+prof_folder=path.join(getcwd(), "..", "PROC_FILES","%s" % shot_number)
 chdir(prof_folder)
-ne=np.loadtxt('ne.dat')
+ne=np.load('ne.npy')
 info=np.loadtxt('prof_info.dat')
 
 prof_list=listdir(prof_folder)
 prof_list.sort()
-position=np.empty(shape=((len(prof_list)-2),len(ne)))
-times=np.empty(len(prof_list)-2)
+position=np.empty(shape=((len(prof_list)),len(ne)))
+times=np.empty(len(prof_list))
 
 i=0
 for r_file in prof_list:
-    name=r_file.strip('.dat')
-    if name not in ('prof_info','ne'):
-        position[i]=np.loadtxt(r_file)*1e2
+    name=r_file.strip('.npy')
+    if name.isdigit():
+        position[i]=np.load(r_file)*1e2
         times[i]=name
         i+=1
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(left=0.25, bottom=0.25)
 l, = plt.plot(position[0],ne, lw=2, color='blue')
-plt.axis([0, 20, ne[0],ne[-1]])
+plt.axis([0, 20, ne[1],ne[-1]*1.1])
 ax.legend(loc='upper left')
 ax.set_xlabel('r (cm)')
 ax.set_ylabel('density (10^19 m^-3)')
