@@ -1,12 +1,15 @@
 import pylab as p
 from proc_profile import ProcProfile
 
+
 class Plasma_Behavior(ProcProfile):
+
     """Evaluate plasma behavior of whole shot"""
+
     def __init__(self, shot, tipo="data"):
-        ProcProfile.__init__(self,shot,tipo)
-        #colocar para testar se tem ou nao dados computados. Se nao tiver, processar todos.
-        #ARRUMAR
+        ProcProfile.__init__(self, shot, tipo)
+        # colocar para testar se tem ou nao dados computados. Se nao tiver, processar todos.
+        # ARRUMAR
 
     def proc_shot(self):
         shot.sweeps_average = 10
@@ -35,10 +38,10 @@ class Plasma_Behavior(ProcProfile):
         p.savetxt(path.join(prof_folder, "prof_info.dat"), [sweeps_average, initial_time, last_time])
         print("time for Processing: {0} s".format(time.time() - time1))
 
-    def plot_variance(self,X,mat):
-        var=p.var(mat,0, dtype=p.float64)
-        p.plot(X,var)
+    def plot_variance(self, X, mat):
+        var = p.var(mat, 0, dtype=p.float64)
+        p.plot(X, var)
         p.show()
 
-    def contour(self,mat):
+    def contour(self, mat):
         pass

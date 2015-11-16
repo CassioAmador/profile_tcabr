@@ -1,6 +1,6 @@
 """
 Function: Evaluates phase derivative and group delay for profile reconstruction.
-Reference is vessel wall, and calibration was done with a pin. After calibration, 
+Reference is vessel wall, and calibration was done with a pin. After calibration,
 signal from both channels are overlapped.
 Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
@@ -18,11 +18,12 @@ import numpy as np
 import ref_functions as rf
 from proc_sweep import ProcSweep
 
-#CONSTANTS
+# CONSTANTS
 # 1e-9*c/pi, freq in GHz, gd in ns
-const = 95426903.18473884*1e-9
+const = 95426903.18473884 * 1e-9
 # distance (39.5 cm) in nanoseconds from vessel wall to limiter, x2
 wall_corr = 2.6351563520654012
+
 
 class ProcGroupDelay(ProcSweep):
 
@@ -35,9 +36,9 @@ class ProcGroupDelay(ProcSweep):
         # inherit from ProcSweep class
         ProcSweep.__init__(self, shot, tipo, save_locally)
         self.find_sweep_points()
-        self.freq_check=0
+        self.freq_check = 0
 
-    def average_specgram(self, sweeps=8, sweep_ini=20, all_shot=0, freq_min=(2*8.7, 0), freq_max=(1e2, 3*14)):
+    def average_specgram(self, sweeps=8, sweep_ini=20, all_shot=0, freq_min=(8.4, 26), freq_max=(40, 40)):
         """Average spectrograms of a specified cluster of sweeps."""
         # if the class has already a mean stored, deletes it.
         if hasattr(self, "matrix_k_mean"):
@@ -50,20 +51,20 @@ class ProcGroupDelay(ProcSweep):
             self.read_single_sweep("Ka", sweep)
             if all_shot == 0:
                 print(self.sweep_cur)
-            matrix_k = self.spectrogram('K', figure=sweep + 1, normal=1, freqs=(3e3, 15e3))
-            matrix_ka = self.spectrogram('Ka', figure=sweep + 1, normal=1, freqs=(2e3, 15e3))
+            matrix_k = self.spectrogram('K', figure=sweep + 1, normal=1, freqs=(4e3, 15e3))
+            matrix_ka = self.spectrogram('Ka', figure=sweep + 1, normal=1, freqs=(2e3, 17e3))
             if hasattr(self, 'matrix_k_mean'):
-                self.matrix_k_mean += matrix_k[:, np.logical_or(self.X['K'] > freq_min[0], self.X['K'] < freq_max[0])]
-                self.matrix_ka_mean += matrix_ka[:, np.logical_or(self.X['Ka'] > freq_min[1], self.X['Ka'] < freq_max[1])]
+                self.matrix_k_mean += matrix_k[:, np.logical_and(self.X['K'] > freq_min[0], self.X['K'] < freq_max[0])]
+                self.matrix_ka_mean += matrix_ka[:, np.logical_and(self.X['Ka'] > freq_min[1], self.X['Ka'] < freq_max[1])]
             # if there are no mean, creates it.
             else:
-                self.matrix_k_mean = matrix_k[:, np.logical_or(self.X['K'] > freq_min[0], self.X['K'] < freq_max[0])].copy()
-                self.matrix_ka_mean = matrix_ka[:, np.logical_or(self.X['Ka'] > freq_min[1], self.X['Ka'] < freq_max[1])].copy()
-                if self.freq_check==0:
-                    self.freq_check=1
-                    #I hope it does not break!
-                    self.X['K'] = self.X['K'][np.logical_or(self.X['K'] > freq_min[0], self.X['K'] < freq_max[0])].copy()
-                    self.X['Ka'] = self.X['Ka'][np.logical_or(self.X['Ka'] > freq_min[1], self.X['Ka'] < freq_max[1])].copy()
+                self.matrix_k_mean = matrix_k[:, np.logical_and(self.X['K'] > freq_min[0], self.X['K'] < freq_max[0])].copy()
+                self.matrix_ka_mean = matrix_ka[:, np.logical_and(self.X['Ka'] > freq_min[1], self.X['Ka'] < freq_max[1])].copy()
+                if self.freq_check == 0:
+                    self.freq_check = 1
+                    # I hope it does not break!
+                    self.X['K'] = self.X['K'][np.logical_and(self.X['K'] > freq_min[0], self.X['K'] < freq_max[0])]
+                    self.X['Ka'] = self.X['Ka'][np.logical_and(self.X['Ka'] > freq_min[1], self.X['Ka'] < freq_max[1])]
 
         self.matrix_k_mean /= sweeps
         self.matrix_ka_mean /= sweeps
@@ -91,9 +92,9 @@ class ProcGroupDelay(ProcSweep):
 
     def overlap_freq(self):
         # discard first and last points (for instance, 9, and -3)
-        limit_min=None
-        limit_max=None
-        if not hasattr(self,'freqs_overlap'):
+        limit_min = None
+        limit_max = None
+        if not hasattr(self, 'freqs_overlap'):
             if min(self.X['Ka']) <= max(self.X['K']):
                 # check the number of points of overlaped frquency.
                 self.cmin = (abs(self.X['K'] - min(self.X['Ka']))).argmin()
@@ -103,38 +104,39 @@ class ProcGroupDelay(ProcSweep):
                 # frequency array for all bands.
                 self.freqs_overlap = np.concatenate((self.X['K'][limit_min:self.cmin], xn, self.X['Ka'][self.cmax:limit_max]))
             else:
-                self.cmin=None
-                self.cmax=None
+                # ********************* NAO FUNCIONA *************************************
+                self.cmin = None
+                self.cmax = None
                 self.freqs_overlap = np.concatenate((xk[limit_min:self.cmin], xka[self.cmax:limit_max]))
-            self.ne = rf.freq2den(self.freqs_overlap*1e9)
-
+            self.ne = rf.freq2den(self.freqs_overlap * 1e9)
 
     def overlap_gd(self):
         """Overlap group delay from K and Ka bands, if they probe the
          same density layers, with interpolation"""
         # discard first and last points (for instance, 9, and -3)
-        limit_min=None
-        limit_max=None
+        limit_min = None
+        limit_max = None
 
-        if min(self.X['Ka']) <= max(self.X['K']):
-            # interpolate the group delay in the overlap region
-            gdkn = p.interp(xn, self.X['K'], self.gd_k)
-            gdkan = p.interp(xn, self.X['K'], self.gd_ka)
-            gdn = (gdkn + gdkan) / 2
-            self.gd_m = p.concatenate((self.gd_k[limit_min:self.cmin], gdn, self.gd_ka[self.cmax:limit_max]))
-        else:
-            self.gd_m = p.concatenate((self.gd_k[limit_min:self.cmin], self.gd_ka[self.cmax:limit_max]))
+        # ********************* NAO FUNCIONA *************************************
+        # if min(self.X['Ka']) <= max(self.X['K']):
+        # interpolate the group delay in the overlap region
+        #    gdkn = p.interp(xn, self.X['K'], self.gd_k)
+        #    gdkan = p.interp(xn, self.X['K'], self.gd_ka)
+        #    gdn = (gdkn + gdkan) / 2
+        #    self.gd_m = p.concatenate((self.gd_k[limit_min:self.cmin], gdn, self.gd_ka[self.cmax:limit_max]))
+        # else:
+        self.gd_m = p.concatenate((self.gd_k[limit_min:self.cmin], self.gd_ka[self.cmax:limit_max]))
 
     def init_gd(self, tipo="line"):
         """Group delay initialization, default is first order. Second
         order is also available."""
         # choose number of steps to start group_delay
         steps = 6
-        if not hasattr(self,'freqs'):
+        if not hasattr(self, 'freqs'):
             self.ini_f = p.linspace(0, self.freqs_overlap[0], num=steps)[:-1]
             self.freqs = p.concatenate((self.ini_f, self.freqs_overlap))
-            self.ne = rf.freq2den(self.freqs*1e9)
-        if tipo=='line':
+            self.ne = rf.freq2den(self.freqs * 1e9)
+        if tipo == 'line':
             self.ini_t = p.linspace(0, self.gd_m[0], num=steps)[:-1]
             polynomial = p.polyfit(self.ini_f, self.ini_t, 1)
         elif tipo == 'quad':
@@ -170,6 +172,7 @@ class ProcGroupDelay(ProcSweep):
         p.xlabel("freq (GHz)")
         p.ylabel("group delay (ns)")
         p.title("# %s - time: %s ms" % (self.shot, self.sweep2time(self.sweep_cur)))
+
 
 def find_max(matrix, spec_yaxis):
     """Find the curve which follow the maximum for each spectrum."""

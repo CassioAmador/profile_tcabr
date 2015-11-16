@@ -1,11 +1,11 @@
 """Test maximum density."""
 
+import numpy as np
+import matplotlib.pyplot as plt
 import sys
 sys.path.insert(0, './../src/')
 
 import proc_profile as pp
-import matplotlib.pyplot as plt
-import numpy as np
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)

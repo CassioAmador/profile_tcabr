@@ -1,30 +1,30 @@
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider, Button
 import sys
 sys.path.insert(0, './../src/')
 
-import proc_profile as pp
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider, Button
+import proc_profile_bottollier as pp
 
-fig, ax = plt.subplots(1,2)
+fig, ax = plt.subplots(1, 2)
 plt.subplots_adjust(bottom=0.25)
-shot = pp.ProcProfile(31833)
+shot = pp.Bottollier(33708)
 
 shot.reference_gd(all_shot=1)
-cluster = 15
+cluster = 20
 shot.plasma_gd(1, cluster, 1)
 
-ax[0].pcolormesh(shot.X_k, shot.Y_k, shot.matrix_k_mean)
-ax[1].pcolormesh(shot.X_ka, shot.Y_ka, shot.matrix_ka_mean)
+ax[0].pcolormesh(shot.X['K'], shot.Y['K'], shot.matrix_k_mean)
+ax[1].pcolormesh(shot.X['Ka'], shot.Y['Ka'], shot.matrix_ka_mean)
 
-l, = ax[0].plot(shot.X_k, shot.Y_k[shot.matrix_k_mean.argmax(axis=0)], color='r', linewidth=2.0)
+l, = ax[0].plot(shot.X['K'], shot.Y['K'][shot.matrix_k_mean.argmax(axis=0)], color='r', linewidth=2.0)
 ax[0].set_ylim(0, 12)
-ax[0].set_xlim(shot.X_k.min(), shot.X_k.max())
+ax[0].set_xlim(shot.X['K'].min(), shot.X['K'].max())
 ax[0].set_ylabel("group delay (ns)")
 ax[0].set_xlabel("freq (GHz)")
-m, = ax[1].plot(shot.X_ka, shot.Y_ka[shot.matrix_ka_mean.argmax(axis=0)], color='r', linewidth=2.0)
+m, = ax[1].plot(shot.X['Ka'], shot.Y['Ka'][shot.matrix_ka_mean.argmax(axis=0)], color='r', linewidth=2.0)
 ax[1].set_xlabel("freq (GHz)")
 ax[1].set_ylim(0, 12)
-ax[1].set_xlim(shot.X_ka.min(), shot.X_ka.max())
+ax[1].set_xlim(shot.X['Ka'].min(), shot.X['Ka'].max())
 title = fig.suptitle("# %s - time: %s ms" % (shot.shot, shot.sweep2time(shot.sweep_cur)))
 
 axcolor = 'lightgoldenrodyellow'
@@ -35,10 +35,10 @@ sweep = Slider(axfreq, 'Sweep', 1, len(shot.points) - 1 - cluster, valinit=1, va
 
 def update(val):
     shot.plasma_gd(int(sweep.val), cluster, 1)
-    ax[0].pcolormesh(shot.X_k, shot.Y_k, shot.matrix_k_mean)
-    ax[1].pcolormesh(shot.X_ka, shot.Y_ka, shot.matrix_ka_mean)
-    l.set_ydata(shot.Y_k[shot.matrix_k_mean.argmax(axis=0)])
-    m.set_ydata(shot.Y_ka[shot.matrix_ka_mean.argmax(axis=0)])
+    ax[0].pcolormesh(shot.X['K'], shot.Y['K'], shot.matrix_k_mean)
+    ax[1].pcolormesh(shot.X['Ka'], shot.Y['Ka'], shot.matrix_ka_mean)
+    l.set_ydata(shot.Y['K'][shot.matrix_k_mean.argmax(axis=0)])
+    m.set_ydata(shot.Y['Ka'][shot.matrix_ka_mean.argmax(axis=0)])
     title.set_text("# %s - time: %.3f ms" % (shot.shot, shot.sweep2time(shot.sweep_cur)))
     fig.canvas.draw_idle()
 sweep.on_changed(update)

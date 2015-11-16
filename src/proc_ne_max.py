@@ -15,8 +15,6 @@ import scipy.signal
 
 from proc_group_delay import ProcGroupDelay
 
-
-
     def find_ne_max(self):
         if not hasattr(self, "ne_max"):
             self.ne_max = []
@@ -24,13 +22,13 @@ from proc_group_delay import ProcGroupDelay
 #       print(max(p.diff(self.gd_m)))
         if len(zeros_gd) != 0:
             print("pequeno")
-            self.ne_max.append(rf.freq2den(1e9*self.X[zeros_gd[0]]))
+            self.ne_max.append(rf.freq2den(1e9 * self.X[zeros_gd[0]]))
             self.gd_m[zeros_gd[0]:] = float("NaN")
         else:
             dif_gd = p.where(p.diff(self.gd_m) > 3.5)[0]
             if len(dif_gd) != 0:
                 print("grande")
-                self.ne_max.append(rf.freq2den(1e9*self.X[dif_gd[-1]]))
+                self.ne_max.append(rf.freq2den(1e9 * self.X[dif_gd[-1]]))
                 self.gd_m[dif_gd[0]:] = float("NaN")
             else:
                 self.ne_max.append(float("NaN"))
@@ -39,10 +37,10 @@ from proc_group_delay import ProcGroupDelay
     def find_ne_max2(self):
         """Find maximum density."""
         self.freqs_full = np.sort(np.concatenate((self.X_k, self.X_ka)))
-        self.ne_full = rf.freq2den(1e9*self.freqs_full)
-        index = np.where(np.logical_or(self.gd_k < 0, self.gd_k > 0.95*wall_corr))[0]
+        self.ne_full = rf.freq2den(1e9 * self.freqs_full)
+        index = np.where(np.logical_or(self.gd_k < 0, self.gd_k > 0.95 * wall_corr))[0]
         if len(index) > 0:
-            self.ne_max = rf.freq2den(1e9*self.X_k[index[0]])
+            self.ne_max = rf.freq2den(1e9 * self.X_k[index[0]])
             # No plasma?
             if self.ne_max < 0.45e19:
                 self.no_plasma = True
@@ -54,9 +52,9 @@ from proc_group_delay import ProcGroupDelay
                 self.gd2 = self.gd_k[:index[0]]
                 self.freqs2 = self.X_k[:index[0]]
         else:
-            index = np.where(np.logical_or(self.gd_ka < 0, self.gd_ka > 0.95*wall_corr))[0]
+            index = np.where(np.logical_or(self.gd_ka < 0, self.gd_ka > 0.95 * wall_corr))[0]
             if len(index) > 0:
-                self.ne_max = rf.freq2den(1e9*self.X_ka[index[0]])
+                self.ne_max = rf.freq2den(1e9 * self.X_ka[index[0]])
                 if index[0] == 0:
                     self.gd2 = self.gd_k[:index[0]]
                     self.freqs2 = self.X_k[:index[0]]

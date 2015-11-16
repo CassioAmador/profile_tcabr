@@ -22,6 +22,7 @@ except ImportError:
 
 import read_shots_folder
 
+
 class ReadSignal():
 
     def __init__(self, shot='0', acq_mode='data'):
@@ -113,7 +114,7 @@ class ReadSignal():
             print("No reflectometry data available for this shot.")
             return
 
-    def read_channel(self, chan,save_locally=1):
+    def read_channel(self, chan, save_locally=1):
         """Try to read bin data from the channel specified, first locally, then from MDSPlus"""
         # dict to exchange between number and name of channel.
         channels = {1: 'K', 2: 'Ka', 3: 'ref', 4: 'time'}
@@ -123,7 +124,7 @@ class ReadSignal():
         except KeyError:
             channel = chan
             chan = bands[channel]
-        if (chan==4) & (self.mode=="ff"):
+        if (chan == 4) & (self.mode == "ff"):
             print("no channel 4, data for fixed frequency shots")
             return
         try:

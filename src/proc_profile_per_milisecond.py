@@ -1,6 +1,6 @@
 """
 Function: Recreate density profile for each milissecond, with Bottolier-Curtet method.
-Stores it on MDSPlus database.
+Stores it on 'MDSPlus database.
 Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
     Gilson Ronchi (gronchi at if.usp.br)
@@ -23,15 +23,15 @@ if __name__ == "__main__":
     if last_sweep > len(shot.points):
         last_sweep = len(shot.points)
     # 'all_shot' set to 1 avoids printing unnecessary information.
-    shot.reference_gd(all_shot = 1)
+    shot.reference_gd(all_shot=1)
     # sweeps average each milissecond
-    sweeps_average = int(1*1e3/(shot.sweep_dur + shot.interv_sweep))
-    #take out last sweep just to be sure.
-    sweeps_array=np.arange(initial_sweep, last_sweep, sweeps_average)[:-1]
-    #Evaluates profile once to check number of points per profile.
-    shot.profile(1,1,all_shot = 1)
-    #matrix of position by time and density.
-    shot.matrix = np.empty((len(sweeps_array),len(shot.pos)))
+    sweeps_average = int(1 * 1e3 / (shot.sweep_dur + shot.interv_sweep))
+    # take out last sweep just to be sure.
+    sweeps_array = np.arange(initial_sweep, last_sweep, sweeps_average)[:-1]
+    # Evaluates profile once to check number of points per profile.
+    shot.profile(1, 1, all_shot=1)
+    # matrix of position by time and density.
+    shot.matrix = np.empty((len(sweeps_array), len(shot.pos)))
 
     i = 0
     for sweep in sweeps_array:
@@ -40,17 +40,17 @@ if __name__ == "__main__":
         shot.matrix[i] = shot.pos
         i += 1
 
-    #Save to tree
+    # Save to tree
     tree_name = "tcabr_ref"
-    tree = MDSplus.Tree(tree_name, self.shot)
+    tree = mds.Tree(tree_name, shot_number)
     # time array.
     node = tree.getNode("\\prof_time.signal")
-    data = MDSplus.Float32Array(np.arange(initial_time,last_time,interval_time),dtype=np.float32)
+    data = mds.Float32Array(np.arange(initial_time, last_time, interval_time), dtype=np.float32)
     data.setUnits("ms")
     # density array. It will be the same for all shot.
     node = tree.getNode("\\prof_density.signal")
-    data = MDSplus.Float32Array(shot.ne_poly,dtype=np.float32)
+    data = mds.Float32Array(shot.ne_poly, dtype=np.float32)
     # position matrix
     node = tree.getNode("\\prof_position.signal")
-    data = MDSplus.Float32Array(shot.matrix,dtype=np.float32)
+    data = mds.Float32Array(shot.matrix, dtype=np.float32)
     data.setUnits("m")
