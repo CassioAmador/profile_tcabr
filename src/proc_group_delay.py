@@ -38,7 +38,7 @@ class ProcGroupDelay(ProcSweep):
         self.find_sweep_points()
         self.freq_check = 0
 
-    def average_specgram(self, sweeps=8, sweep_ini=20, all_shot=0, freq_min=(8.4, 26), freq_max=(40, 40)):
+    def average_specgram(self, sweeps=8, sweep_ini=20, all_shot=0, freq_min=(8.2, 26.5), freq_max=(40, 41)):
         """Average spectrograms of a specified cluster of sweeps."""
         # if the class has already a mean stored, deletes it.
         if hasattr(self, "matrix_k_mean"):
@@ -52,7 +52,7 @@ class ProcGroupDelay(ProcSweep):
             if all_shot == 0:
                 print(self.sweep_cur)
             matrix_k = self.spectrogram('K', figure=sweep + 1, normal=1, freqs=(4e3, 15e3))
-            matrix_ka = self.spectrogram('Ka', figure=sweep + 1, normal=1, freqs=(2e3, 17e3))
+            matrix_ka = self.spectrogram('Ka', figure=sweep + 1, normal=1, freqs=(4e3, 16e3))
             if hasattr(self, 'matrix_k_mean'):
                 self.matrix_k_mean += matrix_k[:, np.logical_and(self.X['K'] > freq_min[0], self.X['K'] < freq_max[0])]
                 self.matrix_ka_mean += matrix_ka[:, np.logical_and(self.X['Ka'] > freq_min[1], self.X['Ka'] < freq_max[1])]

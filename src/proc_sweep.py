@@ -164,19 +164,19 @@ class ProcSweep(ReadSignal):
                 fft_sig *= (1. / fft_sig.max())
             matrix[i] = abs(fft_sig)
 
-        if not hasattr(self,'Dt_DF'):
-            self.Dt_DF={}
+        if not hasattr(self, 'Dt_DF'):
+            self.Dt_DF = {}
         if channel not in self.Dt_DF.keys():
             # Inverse of dF/dt sweeping rate:
             self.Dt_DF[channel] = self.sweep_dur / ((self.freq_end - self.freq_start) * self.chan_factor[channel])
 
-        if not hasattr(self,'X'):
-            self.X={}
+        if not hasattr(self, 'X'):
+            self.X = {}
         if channel not in self.X.keys():
             # X is and array with the probing frequency.
             self.X[channel] = np.linspace(self.freq_start, self.freq_end, num=len(matrix)) * self.chan_factor[channel]
-        if not hasattr(self,'Y'):
-            self.Y={}
+        if not hasattr(self, 'Y'):
+            self.Y = {}
         if channel not in self.Y.keys():
             # Y is the beating frequency, in MHz, or the group delay, in ns
             self.Y[channel] = np.linspace(0, self.rate / 2., num=zer_pad * N / 2)

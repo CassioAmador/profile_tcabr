@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.insert(0, './../src/')
 
-import proc_profile as pp
+import proc_profile_abel_inversion as pp
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)
-shot = pp.ProcProfile(30407)
+shot = pp.ProcProfile(33708)
 sweeps_average = 33
 
 initial_sweep = shot.time2sweep(32)

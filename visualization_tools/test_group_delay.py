@@ -1,22 +1,22 @@
 """Test group delay (raw) from each band."""
 
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider, Button
 import sys
 sys.path.insert(0, './../src/')
 
-import proc_profile as pp
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider, Button
+import proc_profile_bottollier as pp
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)
-shot = pp.ProcProfile(30407)
+shot = pp.Bottollier(33708)
 
 shot.reference_gd(all_shot=1, sw_clustersize=33)
 cluster = 33
 shot.plasma_gd(1, cluster, 1)
 
-ax1, = plt.plot(shot.X_k , shot.gd_k, 'ob')
-ax2, = plt.plot(shot.X_ka , shot.gd_ka, 'or')
+ax1, = plt.plot(shot.X['K'], shot.gd_k, 'ob')
+ax2, = plt.plot(shot.X['Ka'], shot.gd_ka, 'or')
 plt.xlabel("freq (GHz)")
 plt.ylabel("group delay (ns)")
 plt.title("# %s - time: %s ms" % (shot.shot, shot.sweep2time(shot.sweep_cur)))

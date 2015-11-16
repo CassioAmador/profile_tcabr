@@ -4,18 +4,18 @@ Test group delay (raw) from each band.
 Compare it with median filtered, smoothed and fitted group delay.
 """
 
-import sys
-sys.path.insert(0, './../src/')
-
-import proc_profile as pp
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 import numpy as np
 import scipy
+import sys
+sys.path.insert(0, './../src/')
+
+import proc_profile_abel_inversion as pp
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)
-shot = pp.ProcProfile(30407)
+shot = pp.ProcProfile(33708)
 sweeps_average = 33
 
 shot.reference_gd(all_shot=1, sw_clustersize=sweeps_average)

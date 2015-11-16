@@ -1,4 +1,3 @@
-ARRUMAR
 """
 Function: Recreate density profile from beating signal. Reference is
 vessel wall, and calibration was done with a pin.
@@ -14,7 +13,7 @@ Make an 'ini' file.
 Make a better info file with parameters used.
 """
 
-from os import path, getcwd, makedirs
+from os import path
 import time
 import pylab as p
 import numpy as np
@@ -24,7 +23,7 @@ import scipy.signal
 
 
 import ref_functions as rf
-from proc_sweep import ProcSweep
+from proc_group_delay import ProcGroupDelay
 
 # 1e-9*c/pi, freq in GHz, gd in ns
 const = 95426903.18473884*1e-9
@@ -36,25 +35,14 @@ abel_factor = p.array([2048 / 6435., 429 * p.pi / 4096., 1024 / 3003., 231 * p.p
                        5 * p.pi / 32., 8 / 15., 3 * p.pi / 16., 2 / 3., p.pi / 4., 1, p.pi / 2.], dtype=p.float32)
 
 
-class ProcProfile(ProcSweep):
+class ProcProfile(ProcGroupDelay):
 
     """Recreate profiles from specific shot."""
 
     def __init__(self, shot, tipo="data", save_locally=1):
         self.version = 1.0
-        # inherit from ProcSweep class
-        ProcSweep.__init__(self, shot, tipo, save_locally)
-        self.find_sweep_points()
-        self.check_prof_folder()
-
-    def check_prof_folder(self):
-        self.shotproc_folder = path.join(getcwd(), "..", "PROC", "%s" % self.shot)
-        self.prof_folder = path.join(self.shotproc_folder, "level_0")
-        if path.exists(self.shotproc_folder):
-            pass
-        else:
-            makedirs(self.shotproc_folder)
-            makedirs(self.prof_folder)
+        # inherit from ProcGroupDealy class
+        ProcGroupDelay.__init__(self, shot, tipo, save_locally)
 
     def init_gd(self, tipo="line"):
         """Group delay initialization, default is first order. Second
@@ -98,11 +86,11 @@ class ProcProfile(ProcSweep):
 
     def find_ne_max2(self):
         """Find maximum density."""
-        self.freqs_full = np.sort(np.concatenate((self.X_k, self.X_ka)))
+        self.freqs_full = np.sort(np.concatenate((self.X['K'], self.X['Ka'])))
         self.ne_full = rf.freq2den(1e9*self.freqs_full)
         index = np.where(np.logical_or(self.gd_k < 0, self.gd_k > 0.95*wall_corr))[0]
         if len(index) > 0:
-            self.ne_max = rf.freq2den(1e9*self.X_k[index[0]])
+            self.ne_max = rf.freq2den(1e9*self.X['K'][index[0]])
             # No plasma?
             if self.ne_max < 0.45e19:
                 self.no_plasma = True
@@ -112,20 +100,20 @@ class ProcProfile(ProcSweep):
             else:
                 self.no_plasma = False
                 self.gd2 = self.gd_k[:index[0]]
-                self.freqs2 = self.X_k[:index[0]]
+                self.freqs2 = self.X['K'][:index[0]]
         else:
             index = np.where(np.logical_or(self.gd_ka < 0, self.gd_ka > 0.95*wall_corr))[0]
             if len(index) > 0:
-                self.ne_max = rf.freq2den(1e9*self.X_ka[index[0]])
+                self.ne_max = rf.freq2den(1e9*self.X['Ka'][index[0]])
                 if index[0] == 0:
                     self.gd2 = self.gd_k[:index[0]]
-                    self.freqs2 = self.X_k[:index[0]]
+                    self.freqs2 = self.X['K'][:index[0]]
                     return
             else:
                 # plasma density > max probing density
                 index = [-1]
                 self.ne_max = np.nan
-            freqs = np.concatenate((self.X_k, self.X_ka[:index[0]]))
+            freqs = np.concatenate((self.X['K'], self.X['Ka'][:index[0]]))
             sort_index = np.argsort(freqs)
             self.gd2 = np.concatenate((self.gd_k, self.gd_ka[:index[0]]))[sort_index]
             self.freqs2 = freqs[sort_index]
@@ -380,8 +368,8 @@ class ProcProfile(ProcSweep):
             cont = p.contour
         elif colormap == 1:
             cont = p.contourf
-        cont(self.X_k, self.Y_k, self.matrix_k_mean)
-        cont(self.X_ka, self.Y_ka, self.matrix_ka_mean)
+        cont(self.X['K'], self.Y_k, self.matrix_k_mean)
+        cont(self.X['Ka'], self.Y_ka, self.matrix_ka_mean)
         p.xlabel("freq (GHz)")
         p.ylabel("group delay (ns)")
         p.title("# %s - time: %s ms" % (self.shot, self.sweep2time(self.sweep_cur)))
@@ -394,18 +382,18 @@ class ProcProfile(ProcSweep):
         p.ylabel("group delay (ns)")
         p.title("# %s - time: %s ms" % (self.shot, self.sweep2time(self.sweep_cur)))
 
+
 def find_max(matrix, spec_yaxis):
     """Find the curve which follow the maximum for each spectrum."""
     return spec_yaxis[matrix.argmax(axis=0)]
 
 if __name__ == "__main__":
     # '1': set processing in mdsplus space only.
-    mdsplus_proc=0
-    import sys
+    mdsplus_proc = 0
     # work properly with save_locally parameter
-    save=0
-    if mdsplus_proc==0:
-        save=1
+    save = 0
+    if mdsplus_proc == 0:
+        save = 1
     # change the shot number here
     shot_number = 32211
     # shot_number=28749
@@ -419,20 +407,20 @@ if __name__ == "__main__":
     last_sweep = shot.time2sweep(last_time)
 #   'all_shot' set to 1 avoids printing unnecessary information.
     shot.reference_gd(all_shot=1)
-    if mdsplus_proc==0:
-        sweeps_average = 10 
-        sweeps_array=p.arange(initial_sweep, last_sweep, sweeps_average)
+    if mdsplus_proc == 0:
+        sweeps_average = 10
+        sweeps_array = p.arange(initial_sweep, last_sweep, sweeps_average)
         print("time for reading files: {0} s".format(time.time() - time0))
         time1 = time.time()
     else:
-        interval_time=1 
+        interval_time = 1
         # sweeps average each milissecond
         sweeps_average = int(1*1e3/(shot.sweep_dur + shot.interv_sweep))
-        sweeps_array=p.arange(initial_sweep, last_sweep, sweeps_average)
-        #matrix of position by time by density. Density has size, the same as ne_poly
-        #HERE THERE BE DRAGONS. OR PROBLEMS WITH NE_POLY AND SHOT.R SIZE.
-        shot.matrix=p.zeros((len(sweeps_array),98))
-        i=0
+        sweeps_array = p.arange(initial_sweep, last_sweep, sweeps_average)
+        # matrix of position by time by density. Density has size, the same as ne_poly
+        # HERE THERE BE DRAGONS. OR PROBLEMS WITH NE_POLY AND SHOT.R SIZE.
+        shot.matrix = p.zeros((len(sweeps_array), 98))
+        i = 0
     for sweep in sweeps_array:
         # print sweep
         shot.plasma_gd(sweep, sweeps_average, all_shot=1)
@@ -440,82 +428,83 @@ if __name__ == "__main__":
         shot.init_gd()
         # choose poly fit order
         shot.profile_poly_2(order=2, all_shot=1)
-        if mdsplus_proc==0:
+        if mdsplus_proc == 0:
             # save profile in file with time in microsseconds
             p.savetxt(path.join(shot.prof_folder, "%06d.dat" % (shot.sweep2time(sweep) * 1e3)), shot.r)
         else:
-            shot.matrix[i]=shot.r
-            i=+1
-    if mdsplus_proc==0:
+            shot.matrix[i] = shot.r
+            i += 1
+    if mdsplus_proc == 0:
         # separate density in other file, to save space.
         p.savetxt(path.join(shot.prof_folder, "ne.dat"), shot.ne_poly)
         # save info file with parameters used to evaluate profiles.
         p.savetxt(path.join(shot.prof_folder, "prof_info.dat"), [sweeps_average, initial_time, last_time])
-        print("time for Processing: {0} s".fomart(time.time() - time1)) 
+        print("time for Processing: {0} s".fomart(time.time() - time1))
     else:
         tree_name = "tcabr_ref"
-        tree = MDSplus.Tree(tree_name, self.shot)
+        tree = MDSplus.Tree(tree_name, shot_number)
         # time array.
         node = tree.getNode("\\prof_time.signal")
-        data = MDSplus.Float32Array(np.arange(initial_time,last_time,interval_time),dtype=np.float32)
+        data = MDSplus.Float32Array(np.arange(initial_time, last_time, interval_time), dtype=np.float32)
         data.setUnits("ms")
         # density array. It will the same for all shot. No unit
         node = tree.getNode("\\prof_density.signal")
-        data = MDSplus.Float32Array(shot.ne_poly,dtype=np.float32)
+        data = MDSplus.Float32Array(shot.ne_poly, dtype=np.float32)
         # position matrix
         node = tree.getNode("\\prof_position.signal")
-        data = MDSplus.Float32Array(shot.matrix,dtype=np.float32)
+        data = MDSplus.Float32Array(shot.matrix, dtype=np.float32)
         data.setUnits("m")
-import time 
-import pylab as p 
-from os import path
-from sys import argv
-import proc_profile as pp
 
-#input shot_number
-if len(argv)>1:
-    shot_number=int(argv[1])
-else:
-    shot_number = 32210
-save_locally=0
-time0 = time.time()
-shot = pp.ProcProfile(shot_number,save_locally=save_locally)
-#sweeps_average = 10
-#Average of sweeps in time set in sweeps_average_time
-sweeps_average_time = 1 # in ms
-sweeps_average = int(sweeps_average_time*1e3/(shot.sweep_dur + shot.interv_sweep))
-print sweeps_average
-initial_sweep = 0
-last_sweep = len(shot.points)
-initial_time = 0
-last_time = 170
-initial_sweep = shot.time2sweep(initial_time)
-last_sweep = shot.time2sweep(last_time)
-#'all_shot' set to 1 avoids printing unnecessary information.
-shot.reference_gd(all_shot=1)
-print("time for reading files: %s s" % (time.time() - time0))
-time1 = time.time()
-#don't go until the end or some problems could appear for the last average.
-for sweep in p.arange(initial_sweep, last_sweep-sweeps_average, sweeps_average):
-    # print sweep
-    shot.plasma_gd(sweep, sweeps_average, all_shot=1)
-    shot.overlap_gd()
-    shot.init_gd()
-    shot.find_ne_max()
-    # choose poly fit order
-    shot.profile_poly_2(order=2, all_shot=1)
-    # save profile in file with time in microsseconds
-    if save_locally==1:
-        p.savetxt(path.join(shot.prof_folder, "%06d.dat" % (shot.sweep2time(sweep) * 1e3)), shot.r)
-shot.ne_max=p.array(shot.ne_max)
-if save_locally==1:
-    # separate density in other file, to save space.
-    shot.save_ne()
-    # save info file with parameters used to evaluate profiles.
-    shot.save_proc_info(sweeps_average,initial_time,last_time)
-    # save maximum estimated density.
-    p.savetxt(path.join(shot.prof_folde, "ne_max.dat"), shot.ne_max)
-print("time for Processing: %s s" % (time.time() - time1))
-p.plot(shot.ne_max,'r')
-p.plot(shot.ne_max,'b.')
-p.show()
+# import time
+# import pylab as p
+# from os import path
+# from sys import argv
+# import proc_profile as pp
+
+# #input shot_number
+# if len(argv)>1:
+#     shot_number=int(argv[1])
+# else:
+#     shot_number = 32210
+# save_locally=0
+# time0 = time.time()
+# shot = pp.ProcProfile(shot_number,save_locally=save_locally)
+# #sweeps_average = 10
+# #Average of sweeps in time set in sweeps_average_time
+# sweeps_average_time = 1 # in ms
+# sweeps_average = int(sweeps_average_time*1e3/(shot.sweep_dur + shot.interv_sweep))
+# print sweeps_average
+# initial_sweep = 0
+# last_sweep = len(shot.points)
+# initial_time = 0
+# last_time = 170
+# initial_sweep = shot.time2sweep(initial_time)
+# last_sweep = shot.time2sweep(last_time)
+# #'all_shot' set to 1 avoids printing unnecessary information.
+# shot.reference_gd(all_shot=1)
+# print("time for reading files: %s s" % (time.time() - time0))
+# time1 = time.time()
+# #don't go until the end or some problems could appear for the last average.
+# for sweep in p.arange(initial_sweep, last_sweep-sweeps_average, sweeps_average):
+#     # print sweep
+#     shot.plasma_gd(sweep, sweeps_average, all_shot=1)
+#     shot.overlap_gd()
+#     shot.init_gd()
+#     shot.find_ne_max()
+#     # choose poly fit order
+#     shot.profile_poly_2(order=2, all_shot=1)
+#     # save profile in file with time in microsseconds
+#     if save_locally==1:
+#         p.savetxt(path.join(shot.prof_folder, "%06d.dat" % (shot.sweep2time(sweep) * 1e3)), shot.r)
+# shot.ne_max=p.array(shot.ne_max)
+# if save_locally==1:
+#     # separate density in other file, to save space.
+#     shot.save_ne()
+#     # save info file with parameters used to evaluate profiles.
+#     shot.save_proc_info(sweeps_average,initial_time,last_time)
+#     # save maximum estimated density.
+#     p.savetxt(path.join(shot.prof_folde, "ne_max.dat"), shot.ne_max)
+# print("time for Processing: %s s" % (time.time() - time1))
+# p.plot(shot.ne_max,'r')
+# p.plot(shot.ne_max,'b.')
+# p.show()

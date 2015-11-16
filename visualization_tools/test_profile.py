@@ -1,15 +1,15 @@
-import sys
-sys.path.insert(0, './../src/')
-
-import proc_profile as pp
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 import numpy as np
+import sys
+sys.path.insert(0, './../src/')
+
+import proc_profile_abel_inversion as pp
 import ref_functions as rf
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)
-shot = pp.ProcProfile(31833)
+shot = pp.ProcProfile(33708)
 
 shot.reference_gd(all_shot=1, sw_clustersize=1)
 cluster = 50
@@ -46,7 +46,7 @@ def update(val):
     shot.find_ne_max2()
     r = np.nan*np.ones(len(ne))
     if not shot.no_plasma:
-        r_inver = shot.abel_transform(shot.gd2*1e-9, shot.freqs2*1e9, order=2, init=1)
+        r_inver = shot.abel_transform(shot.gd2*1e-9, shot.freqs2*1e9, order=3, init=1)
         r[:len(r_inver)] = r_inver
         tau0 = np.polyval(np.polyfit(shot.freqs2, shot.gd2, 2), shot.freqs2[0])
         f_init = np.linspace(1, shot.freqs2[0], 10)
