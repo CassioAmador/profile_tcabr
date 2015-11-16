@@ -3,7 +3,8 @@ Function: Recreate density profile with th Bottolier-Curtet method
 Authors:
     Cassio Amador (cassioamador at yahoo.com.br)
     Gilson Ronchi (gronchi at if.usp.br)
-TODO: ??
+TODO: Maybe the processing will speed up if the refraction index is evaluated only once per frequency,
+      and all results stored in a matrix for recurrent use in each profile.
 """
 
 import numpy as np
