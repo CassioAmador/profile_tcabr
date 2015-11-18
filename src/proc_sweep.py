@@ -11,7 +11,7 @@ Some functions could be modified to work with hopping frequency.
 """
 
 import numpy as np
-
+from scipy import signal
 from read_signal import ReadSignal
 
 
@@ -123,9 +123,50 @@ class ProcSweep(ReadSignal):
         p.xlabel("freq (GHz)")
         p.ylabel("beating signal")
 
+    def spectrogram2(self, channel, window_scale=4, step_scale=16, log=0,
+                     group_delay=1, figure=0, normal=1, filtered=1,
+                     freqs=(1e3, 15e3), probing_freqs=(0, 100)):
+        """Evaluate and plot spectrogram (SFFT) of beating signal.
+        Some parameters listed (others can be found in the function):
+        group_delay=1 evaluates group delay.
+                    0 evaluates beating frequency
+        normal=1 normalize spectrum
+        log=0
+            1 for log spectrogram
+        """
+        if filtered == 1:
+            sig = self.signal_filter(channel, freqs)
+        else:
+            sig = self.single_sweep_data[channel]
+        nfft = self.rate*1.5
+        f, t, Sxx = signal.spectrogram(sig, self.rate, nperseg=nfft, noverlap=nfft-1, window=signal.get_window('hann', nfft), nfft=3*nfft)
+        if normal == 1:
+            Sxx = Sxx / Sxx.max(axis=0)
+
+        if not hasattr(self, 'Dt_DF'):
+            self.Dt_DF = {}
+        if channel not in self.Dt_DF.keys():
+            # Inverse of dF/dt sweeping rate:
+            self.Dt_DF[channel] = self.sweep_dur / ((self.freq_end - self.freq_start) * self.chan_factor[channel])
+
+        if not hasattr(self, 'X'):
+            self.X = {}
+        if not hasattr(self, 'Y'):
+            self.Y = {}
+        # X is and array with the probing frequency.
+        self.X[channel] = (self.freq_start + (self.freq_end-self.freq_start)*t/t[-1]) * self.chan_factor[channel]
+        index_X = np.logical_and(self.X[channel] > probing_freqs[0], self.X[channel] < probing_freqs[1])
+        self.X[channel] = self.X[channel][index_X].copy()
+        # Y is the beating frequency, in MHz, or the group delay, in ns
+        self.Y[channel] = f
+        if group_delay == 1:
+            # group delay in ns
+            self.Y[channel] *= self.Dt_DF[channel]
+        return Sxx[:, index_X]
+
     def spectrogram(self, channel, window_scale=4, step_scale=16, log=0,
                     group_delay=1, figure=0, normal=1, filtered=1,
-                    freqs=(1e3, 15e3)):
+                    freqs=(1e3, 15e3), probing_freqs=(0, 100)):
         """Evaluate and plot spectrogram (SFFT) of beating signal.
         Some parameters listed (others can be found in the function):
         group_delay=1 evaluates group delay.
@@ -172,18 +213,19 @@ class ProcSweep(ReadSignal):
 
         if not hasattr(self, 'X'):
             self.X = {}
-        if channel not in self.X.keys():
-            # X is and array with the probing frequency.
-            self.X[channel] = np.linspace(self.freq_start, self.freq_end, num=len(matrix)) * self.chan_factor[channel]
+        # X is and array with the probing frequency.
+        self.X[channel] = np.linspace(self.freq_start, self.freq_end, num=len(matrix)) * self.chan_factor[channel]
+        index_X = np.logical_and(self.X[channel] > probing_freqs[0], self.X[channel] < probing_freqs[1])
+        self.X[channel] = self.X[channel][index_X].copy()
+
         if not hasattr(self, 'Y'):
             self.Y = {}
-        if channel not in self.Y.keys():
-            # Y is the beating frequency, in MHz, or the group delay, in ns
-            self.Y[channel] = np.linspace(0, self.rate / 2., num=zer_pad * N / 2)
-            if group_delay == 1:
-                    # group delay in ns
-                    self.Y[channel] *= self.Dt_DF[channel]
+        # Y is the beating frequency, in MHz, or the group delay, in ns
+        self.Y[channel] = np.linspace(0, self.rate / 2., num=zer_pad * N / 2)
+        if group_delay == 1:
+            # group delay in ns
+            self.Y[channel] *= self.Dt_DF[channel]
 
         # transpose matrix for spectrogram.
         matrix = matrix.transpose()
-        return matrix
+        return matrix[:, index_X]

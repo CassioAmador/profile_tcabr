@@ -36,9 +36,8 @@ class ProcGroupDelay(ProcSweep):
         # inherit from ProcSweep class
         ProcSweep.__init__(self, shot, tipo, save_locally)
         self.find_sweep_points()
-        self.freq_check = 0
 
-    def average_specgram(self, sweeps=8, sweep_ini=20, all_shot=0, freq_min=(8.2, 26.5), freq_max=(40, 41)):
+    def average_specgram(self, sweeps=8, sweep_ini=20, all_shot=0, freq_min=(17.5, 26.5), freq_max=(100, 100)):
         """Average spectrograms of a specified cluster of sweeps."""
         # if the class has already a mean stored, deletes it.
         if hasattr(self, "matrix_k_mean"):
@@ -51,20 +50,15 @@ class ProcGroupDelay(ProcSweep):
             self.read_single_sweep("Ka", sweep)
             if all_shot == 0:
                 print(self.sweep_cur)
-            matrix_k = self.spectrogram('K', figure=sweep + 1, normal=1, freqs=(4e3, 15e3))
-            matrix_ka = self.spectrogram('Ka', figure=sweep + 1, normal=1, freqs=(4e3, 16e3))
+            matrix_k = self.spectrogram('K', figure=sweep + 1, normal=1, freqs=(4e3, 15e3), probing_freqs=(freq_min[0], freq_max[0]))
+            matrix_ka = self.spectrogram('Ka', figure=sweep + 1, normal=1, freqs=(5e3, 17e3), probing_freqs=(freq_min[1], freq_max[1]))
             if hasattr(self, 'matrix_k_mean'):
-                self.matrix_k_mean += matrix_k[:, np.logical_and(self.X['K'] > freq_min[0], self.X['K'] < freq_max[0])]
-                self.matrix_ka_mean += matrix_ka[:, np.logical_and(self.X['Ka'] > freq_min[1], self.X['Ka'] < freq_max[1])]
+                self.matrix_k_mean += matrix_k
+                self.matrix_ka_mean += matrix_ka
             # if there are no mean, creates it.
             else:
-                self.matrix_k_mean = matrix_k[:, np.logical_and(self.X['K'] > freq_min[0], self.X['K'] < freq_max[0])].copy()
-                self.matrix_ka_mean = matrix_ka[:, np.logical_and(self.X['Ka'] > freq_min[1], self.X['Ka'] < freq_max[1])].copy()
-                if self.freq_check == 0:
-                    self.freq_check = 1
-                    # I hope it does not break!
-                    self.X['K'] = self.X['K'][np.logical_and(self.X['K'] > freq_min[0], self.X['K'] < freq_max[0])]
-                    self.X['Ka'] = self.X['Ka'][np.logical_and(self.X['Ka'] > freq_min[1], self.X['Ka'] < freq_max[1])]
+                self.matrix_k_mean = matrix_k.copy()
+                self.matrix_ka_mean = matrix_ka.copy()
 
         self.matrix_k_mean /= sweeps
         self.matrix_ka_mean /= sweeps
