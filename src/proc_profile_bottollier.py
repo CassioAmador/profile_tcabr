@@ -36,7 +36,7 @@ class Bottollier(ProcGroupDelay):
 
         # frequency times refraction index
         refrac_index = rf.refrac(freqs_prob[:n + 1], freqs_prob[n])
-        area = freqs_prob[n] * integrate.trapz(refrac_index, pos[:n + 1])
+        area = const * freqs_prob[n] * integrate.trapz(refrac_index, pos[:n + 1])
         return area
 
     def pos_eval(self, n, freqs_prob, pos, phase_cur):
@@ -47,7 +47,7 @@ class Bottollier(ProcGroupDelay):
             phase_prev = 0
         else:
             phase_prev = self.area_prev(n, freqs_prob, pos)
-        return pos[n - 1] + (phase_cur - phase_prev + np.pi / 2) / (area_dif)
+        return pos[n - 1] + const_inv * (phase_cur - phase_prev + np.pi / 2) / (area_dif)
 
     def find_pos(self, nX, phase):
         """Iterates over all frequencies to evaluate their reflection distance"""
@@ -78,7 +78,7 @@ class Bottollier(ProcGroupDelay):
         phase_dif_ka = self.gd_ka / self.Dt_DF['Ka']
         self.phi_ka = integrate.cumtrapz(phase_dif_ka) + self.phi_k[self.cmin]
         self.overlap_phase()
-        self.pos = const_inv * self.find_pos(self.nX['2bands'], self.phase)
+        self.pos = self.find_pos(self.nX['2bands'], self.phase)
 
     def overlap_phase(self):
         """If both bands overlap, interpolates the K band phase into Ka band's
