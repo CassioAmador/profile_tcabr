@@ -12,7 +12,7 @@ Have an option to choose average by time
 import numpy as np
 from os.path import join
 
-from proc_profile_bottollier import Bottollier
+from proc_profile_bottollier import ProcProfile
 from read_shots_folder import check_prof_folder
 
 
@@ -33,7 +33,9 @@ if __name__ == "__main__":
     # save data locally?
     save = 1
     time_on = 1
-    shot = Bottollier(shot_number, save_locally=save)
+    shot = ProcProfile(shot_number, save_locally=save)
+    shot.reference_gd()
+    shot.eval_freq_overlap()
     if time_on == 1:
         import time
         time0 = time.time()

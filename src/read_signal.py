@@ -35,6 +35,8 @@ class ReadSignal():
         self.__readMDSplus__ = False
         self.__LocalMDSplusSever__ = False
         self.bindata = {}
+        # multiplying factor for channel frequencies
+        self.chan_factor = {"K": 2, "Ka": 3, "ref": 1, "time": 1}
         self.read_info()
 
     def read_info(self):

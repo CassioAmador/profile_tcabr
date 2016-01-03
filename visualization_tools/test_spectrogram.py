@@ -3,19 +3,22 @@ from matplotlib.widgets import Slider, Button
 import sys
 sys.path.insert(0, './../src/')
 
-import proc_profile_bottollier as pp
+import proc_profile_bottollier as ppb
 
 
 def main(argv):
     """Test maximum density."""
     print(len(argv))
-    if len(argv) < 2:
-        shot = 33772
+    if len(argv) < 1:
+        shot_number=int(open('shot_number.txt','r').read())
     else:
-        shot = int(argv[1])
+        if (len(argv) == 1) & ("py" in argv[0]):
+           shot_number=int(open('shot_number.txt','r').read())
+        else:    
+            shot_number = int(argv[1])
     fig, ax = plt.subplots()
     plt.subplots_adjust(bottom=0.25)
-    shot = pp.Bottollier(33708)
+    shot = ppb.ProcProfile(33708)
 
     shot.reference_gd(all_shot=1)
     cluster = 20

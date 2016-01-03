@@ -6,7 +6,7 @@ import sys
 if './../src/' not in sys.path:
     sys.path.insert(0, './../src/')
 
-import proc_profile_bottollier as ppb
+import proc_profile_abel_inversion as ppa
 import ref_functions as rf
 
 if len(sys.argv) < 1:
@@ -17,24 +17,18 @@ else:
     else:    
         shot_number = int(sys.argv[1])
 
-factors={'1':'1','2/3':'2/3','1/2':'1/2'}
-pos={}
-cluster = 20
-shot= ppb.ProcProfile(shot_number, save_locally=1)
+cluster = 8
+shot= ppa.ProcProfile(shot_number, save_locally=1)
 sweep_ini = shot.time2sweep(100)
 shot.reference_gd(all_shot=1, sw_clustersize=cluster)
 shot.eval_freq_overlap()
 shot.prepare_gd(sweep_ini, cluster, all_shot=1)
-shot.eval_phase()
+shot.profile()
+
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)
-lines={}
-
-for f in factors.keys():
-    pos[f]=ppb.find_pos(shot.freqs[1:], shot.phi,factor=eval(f))
-    lines[f], = plt.plot(pos[f] * 1e2, shot.ne[1:],label=factors[f])
-
-ax.legend(loc='upper left',title='Factor:')
+line, = plt.plot(shot.pos * 1e2, shot.ne,label="profile")
+ax.legend(loc='upper left')
 ax.set_xlabel('r (cm)')
 ax.set_ylabel('density (10^19 m^-3)')
 plt.title("# %s - time: %s ms" % (shot_number, shot.sweep2time(shot.sweep_cur)))
@@ -56,12 +50,8 @@ sweep = Slider(axfreq, 'Sweep', 1, len(shot.points) -
 
 def update(val):
     shot.prepare_gd(int(sweep.val), cluster, all_shot=1)
-    shot.eval_phase()
-    for f in factors.keys():
-        pos[f] = ppb.find_pos(shot.freqs[1:], shot.phi,factor=eval(f))
-        lines[f].set_xdata(pos[f] * 1e2)
-
-    # l.set_ydata(shot.ne_phi)
+    shot.profile()
+    line.set_xdata(shot.pos * 1e2)
     ax.set_title("# %s - time: %.3f ms" %
                  (shot.shot, shot.sweep2time(shot.sweep_cur)))
     fig.canvas.draw_idle()

@@ -5,11 +5,18 @@ from matplotlib.widgets import Slider, Button
 import sys
 sys.path.insert(0, './../src/')
 
-import proc_profile_bottollier as pp
+import proc_profile_bottollier as ppb
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)
-shot = pp.Bottollier(33708)
+if len(sys.argv) < 1:
+    shot_number=int(open('shot_number.txt','r').read())
+else:
+    if (len(sys.argv) == 1) & ("py" in sys.argv[0]):
+        shot_number=int(open('shot_number.txt','r').read())
+    else:    
+        shot_number = int(sys.argv[1])
+shot = ppb.ProcProfile(shot_number)
 
 shot.reference_gd(all_shot=1, sw_clustersize=33)
 cluster = 33

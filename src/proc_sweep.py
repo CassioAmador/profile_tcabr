@@ -12,7 +12,9 @@ Some functions could be modified to work with hopping frequency.
 
 import numpy as np
 from scipy import signal
+
 from read_signal import ReadSignal
+import custom_spectrogram as cs
 
 
 class ProcSweep(ReadSignal):
@@ -22,18 +24,21 @@ class ProcSweep(ReadSignal):
     def __init__(self, shot, tipo='data', save_locally=1):
         # Inherit from ReadSignal class
         ReadSignal.__init__(self, shot, tipo)
-        # multiplying factor for channel frequencies
-        self.chan_factor = {"K": 2, "Ka": 3, "ref": 1, "time": 1}
+        self.save_locally = save_locally
         # evaluate size of points per sweep
         self.sweep_size = np.round(self.rate * self.sweep_dur)
-        self.save_locally = save_locally
+        # evaluate frequency steps:
+        self.find_sweep_points()
+        # evaluate frequency probing window
+        self.frequency_analysis()
 
     def find_sweep_points(self):
         """Create a list of points (called 'points') where the sweep
         started, with the 'time' channel (channel 4)."""
         self.read_channel('time', self.save_locally)
         # find min value for data, in the first 2 sweeps
-        mindata = self.bindata['time'][:self.rate * 2 * (self.sweep_dur + self.interv_sweep)].min()
+        mindata = self.bindata['time'][:self.rate * 2 *
+                                       (self.sweep_dur + self.interv_sweep)].min()
         # find all points with this value
         zeros = np.where(self.bindata['time'] == mindata)[0]
         # mark only the first minimum for each trigger
@@ -51,11 +56,37 @@ class ProcSweep(ReadSignal):
         self.sweep_cur = (abs(self.points - time * self.rate * 1e3)).argmin()
         return self.sweep_cur
 
-    def sweep2time(self, sweep):
-        """Convert a sweep position to its position in time (ms)."""
+    def sweep2time(self, sweep=0):
+        """Convert a sweep position to its position in time (ms).
+        Defaults to current sweep (sweep_cur)"""
         if not hasattr(self, 'points'):
             self.find_sweep_points()
-        return (self.points[sweep]/self.rate) * 1e-3
+        if sweep == 0:
+            sweep = self.sweep_cur
+        return (self.points[sweep] / self.rate) * 1e-3
+
+    def frequency_analysis(self):
+        """ Frequency limits for the probing frequency.
+        Tests showed that 17.5 GHz and 26.5 GHz for K and Ka bands are the minimum values
+        that seems to be physic relevant. But, depending on the size of the spectrogram, they are current
+        out because of the window size."""
+        self.probing_freq_lim = {}
+        self.probing_freq_lim['K'] = (16, 100)
+        self.probing_freq_lim['Ka'] = (24, 100)
+        self.freqs_start = {}
+        self.freqs_end = {}
+        self.probing_frequency = {}
+        self.mask_probe_freq = {}
+        for channel in ('K', 'Ka'):
+            probe_freq = np.linspace(
+                self.freq_start, self.freq_end, self.sweep_size) * self.chan_factor[channel]
+            self.mask_probe_freq[channel] = np.logical_and(probe_freq >= self.probing_freq_lim[
+                                                           channel][0], probe_freq <= self.probing_freq_lim[channel][1])
+
+            self.probing_frequency[channel] = probe_freq[
+                self.mask_probe_freq[channel]]
+            self.freqs_start[channel] = min(self.probing_frequency[channel])
+            self.freqs_end[channel] = max(self.probing_frequency[channel])
 
     def read_single_sweep(self, channel, sweep_cur=100):
         """Read data for the current sweep (sweep_cur), for an
@@ -67,13 +98,14 @@ class ProcSweep(ReadSignal):
             samples_ini = self.points[self.sweep_cur]
         except IndexError:
             print(len(self.points), self.sweep_cur)
-            samples_ini = self.points[self.sweep_cur-self.sweep_size]
+            samples_ini = self.points[self.sweep_cur - self.sweep_size]
         samples_end = samples_ini + self.sweep_size
         if channel not in self.bindata.keys():
             self.read_channel(channel, self.save_locally)
         if hasattr(self, 'single_sweep_data') == False:
             self.single_sweep_data = {}
-        self.single_sweep_data[channel] = self.bindata[channel][samples_ini:samples_end]
+        self.single_sweep_data[channel] = self.bindata[
+            channel][samples_ini:samples_end][self.mask_probe_freq[channel]]
 
     def single_sweep_time(self, channel, time=30):
         """same as read_single_sweep, but it reads int time (ms)"""
@@ -96,7 +128,8 @@ class ProcSweep(ReadSignal):
         fmin, fmax = freqs
         # creates the beating frequency axis, and finds the position of
         # the frequency limits in the axis
-        fft_freq = np.linspace(0, self.rate * 1e3 / 2., num=zer_pad_filter * N / 2)
+        fft_freq = np.linspace(0, self.rate * 1e3 / 2.,
+                               num=zer_pad_filter * N / 2)
         cmin = (abs(fft_freq - fmin)).argmin()
         cmax = (abs(fft_freq - fmax)).argmin()
         # creates window function for filter. Second argument of kaiser
@@ -118,14 +151,16 @@ class ProcSweep(ReadSignal):
             # dict with arrays for the frequencies in each channel.
             self.sweep_freq = {}
         if channel not in self.sweep_freq.keys():
-            self.sweep_freq[channel] = np.linspace(self.freq_start, self.freq_end, num=self.sweep_size) * self.chan_factor[channel]
-        p.plot(self.sweep_freq[channel], self.single_sweep_data[channel], label="Channel: %s" % channel)
+            self.sweep_freq[channel] = np.linspace(
+                self.freqs_start[channel], self.freqs_end[channel], num=self.sweep_size)
+        p.plot(self.sweep_freq[channel], self.single_sweep_data[
+               channel], label="Channel: %s" % channel)
         p.xlabel("freq (GHz)")
         p.ylabel("beating signal")
 
-    def spectrogram2(self, channel, window_scale=4, step_scale=16, log=0,
-                     group_delay=1, figure=0, normal=1, filtered=1,
-                     freqs=(1e3, 15e3), probing_freqs=(0, 100)):
+    def spectrogram(self, channel, window=256, step_scale=16, zer_pad=8, log=0,
+                    group_delay=1, figure=0, normal=0, filtered=0,
+                    beating_freq_filter=(1, 15)):
         """Evaluate and plot spectrogram (SFFT) of beating signal.
         Some parameters listed (others can be found in the function):
         group_delay=1 evaluates group delay.
@@ -134,98 +169,49 @@ class ProcSweep(ReadSignal):
         log=0
             1 for log spectrogram
         """
-        if filtered == 1:
-            sig = self.signal_filter(channel, freqs)
-        else:
-            sig = self.single_sweep_data[channel]
-        nfft = self.rate*1.5
-        f, t, Sxx = signal.spectrogram(sig, self.rate, nperseg=nfft, noverlap=nfft-1, window=signal.get_window('hann', nfft), nfft=3*nfft)
-        if normal == 1:
-            Sxx = Sxx / Sxx.max(axis=0)
 
         if not hasattr(self, 'Dt_DF'):
             self.Dt_DF = {}
-        if channel not in self.Dt_DF.keys():
-            # Inverse of dF/dt sweeping rate:
-            self.Dt_DF[channel] = self.sweep_dur / ((self.freq_end - self.freq_start) * self.chan_factor[channel])
-
-        if not hasattr(self, 'X'):
             self.X = {}
-        if not hasattr(self, 'Y'):
+            self.delta_freq = {}
+            self.index_X = {}
             self.Y = {}
-        # X is and array with the probing frequency.
-        self.X[channel] = (self.freq_start + (self.freq_end-self.freq_start)*t/t[-1]) * self.chan_factor[channel]
-        index_X = np.logical_and(self.X[channel] > probing_freqs[0], self.X[channel] < probing_freqs[1])
-        self.X[channel] = self.X[channel][index_X].copy()
-        # Y is the beating frequency, in MHz, or the group delay, in ns
-        self.Y[channel] = f
-        if group_delay == 1:
-            # group delay in ns
-            self.Y[channel] *= self.Dt_DF[channel]
-        return Sxx[:, index_X]
+            self.mask_bf = {}
+        if channel not in self.Dt_DF.keys():
+            tem = np.linspace(0, self.sweep_dur, self.sweep_size)
+            tem = tem[self.mask_probe_freq[channel]]
+            self.time_spec, beat_freq = cs.eval_beat_freq(
+                tem, window_size=window, step_scale=step_scale, zer_pad=zer_pad)
+            fmin, fmax, mask_bf = cs.eval_mask(beat_freq, window, beating_freq_filter[
+                                               0], beating_freq_filter[1], zer_pad=zer_pad)
+            self.mask_bf[channel] = mask_bf
+            # print(len(mask_bf),fmin,fmax,len(beat_freq))
+            #print(mask_bf, beating_freq_filter, beat_freq)
 
-    def spectrogram(self, channel, window_scale=4, step_scale=16, log=0,
-                    group_delay=1, figure=0, normal=1, filtered=1,
-                    freqs=(1e3, 15e3), probing_freqs=(0, 100)):
-        """Evaluate and plot spectrogram (SFFT) of beating signal.
-        Some parameters listed (others can be found in the function):
-        group_delay=1 evaluates group delay.
-                    0 evaluates beating frequency
-        normal=1 normalize spectrum
-        log=0
-            1 for log spectrogram
-        """
-        # scale for zero padding
-        zer_pad = 4
-        # alias for sweep_size
-        N = int(self.sweep_size)
-        # SFFT window size
-        window = N / window_scale
-        # SFFT step size, by
-        step = window / step_scale
-        # creates the window function that will 'move' trough the signal
-        # to evaluate each FFT.
-        window_func = np.concatenate((np.zeros(N - window / 2), np.hanning(window), np.zeros(N - window / 2)))
+            # Inverse of dF/dt sweeping rate:
+            self.Dt_DF[channel] = (tem[1] - tem[0]) / \
+                (self.probing_frequency[channel][1] -
+                 self.probing_frequency[channel][0])
+
+            # X is and array with the probing frequency.
+            self.X[channel] = np.linspace(self.probing_frequency[channel][
+                                          window / 2], self.probing_frequency[channel][-window / 2], \
+                                          (len(tem) - window) * step_scale / window)
+
+            self.delta_freq[channel] = self.X[channel][1] - self.X[channel][0]
+
+           # Y is the beating frequency, in MHz, or the group delay, in ns
+            self.Y[channel] = beat_freq[self.mask_bf[channel]]
+            if group_delay == 1:
+                # group delay in ns
+                self.Y[channel] *= self.Dt_DF[channel]
+
         if filtered == 1:
-            sig = self.signal_filter(channel, freqs)
+            sig = self.signal_filter(channel, beating_freq_filter)
         else:
             sig = self.single_sweep_data[channel]
-        # create a matrix to receive the spectra
-        matrix = np.empty(shape=(1 + (N - window) / step, 2 * N))
-        # loop trough all the possible windows, and evaluates the FFT.
-        for i in range(1 + int((N - window) / step)):
-            t = i * step + window / 2
-            new_window = window_func[N - t:N + N - t]
-            new_sig = np.multiply(sig, new_window)
-            # We ignore the fft's first point (DC component).
-            fft_sig = np.fft.rfft(new_sig, zer_pad * N)[1:]
-            if log == 1:
-                fft_sig = np.log(fft_sig)
-            if normal == 1:
-                fft_sig *= (1. / fft_sig.max())
-            matrix[i] = abs(fft_sig)
 
-        if not hasattr(self, 'Dt_DF'):
-            self.Dt_DF = {}
-        if channel not in self.Dt_DF.keys():
-            # Inverse of dF/dt sweeping rate:
-            self.Dt_DF[channel] = self.sweep_dur / ((self.freq_end - self.freq_start) * self.chan_factor[channel])
+        mat_cs = cs.spectrogram(
+            sig, window_size=window, zer_pad=zer_pad, step_scale=step_scale, normalize=normal, freq_mask=self.mask_bf[channel])
 
-        if not hasattr(self, 'X'):
-            self.X = {}
-        # X is and array with the probing frequency.
-        self.X[channel] = np.linspace(self.freq_start, self.freq_end, num=len(matrix)) * self.chan_factor[channel]
-        index_X = np.logical_and(self.X[channel] > probing_freqs[0], self.X[channel] < probing_freqs[1])
-        self.X[channel] = self.X[channel][index_X].copy()
-
-        if not hasattr(self, 'Y'):
-            self.Y = {}
-        # Y is the beating frequency, in MHz, or the group delay, in ns
-        self.Y[channel] = np.linspace(0, self.rate / 2., num=zer_pad * N / 2)
-        if group_delay == 1:
-            # group delay in ns
-            self.Y[channel] *= self.Dt_DF[channel]
-
-        # transpose matrix for spectrogram.
-        matrix = matrix.transpose()
-        return matrix[:, index_X]
+        return abs(mat_cs)

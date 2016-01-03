@@ -11,12 +11,15 @@ import proc_profile_abel_inversion as pp
 def main(argv):
     """Test maximum density."""
     if len(argv) < 1:
-        shot = 33772
+        shot_number=int(open('shot_number.txt','r').read())
     else:
-        shot = int(argv[1])
+        if (len(argv) == 1) & ("py" in argv[0]):
+            shot_number=int(open('shot_number.txt','r').read())
+        else:    
+            shot_number = int(argv[1])
     fig, ax = plt.subplots()
     plt.subplots_adjust(bottom=0.25)
-    shot = pp.ProcProfile(shot)
+    shot = pp.ProcProfile(shot_number)
     sweeps_average = 33
 
     initial_sweep = shot.time2sweep(32)

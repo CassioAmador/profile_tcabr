@@ -18,11 +18,20 @@ from os import path, getcwd
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import animation
+import sys
+sys.path.insert(0, './../src/')
 
-from proc_profile import ProcProfile
+from proc_profile_bottollier import ProcProfile
+
+if len(sys.argv) < 1:
+    shot_number=int(open('shot_number.txt','r').read())
+else:
+    if (len(sys.argv) == 1) & ("py" in sys.argv[0]):
+        shot_number=int(open('shot_number.txt','r').read())
+    else:    
+        shot_number = int(sys.argv[1])
 
 prof_folder=path.join(getcwd(), "..", "PROC")
-shot_number=28061
 info=p.loadtxt(path.join(prof_folder,'prof_info.dat'))
 sw_clustersize=info[0]
 shot=ProcProfile(shot_number)

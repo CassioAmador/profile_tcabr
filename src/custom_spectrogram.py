@@ -59,7 +59,10 @@ def spectrogram(sig, window_size=256, step_scale=4, zer_pad=2, time_array=None,f
         factor=1
 
     # create a matrix to receive the spectra
-    matrix = np.empty(((N - window_size) / step, window_size*zer_pad/factor))
+    mat_Y=window_size*zer_pad/factor
+    #if len(freq_mask)!=0:
+    #    mat_Y=len(np.where(freq_mask)[0])
+    matrix = np.empty(((N - window_size) / step, mat_Y))
 
     if filtered == 1:
         b, a, zi = _init_filter()
@@ -91,9 +94,9 @@ def spectrogram(sig, window_size=256, step_scale=4, zer_pad=2, time_array=None,f
         else:
             fft_sig=fft_sig[:len(fft_sig)/factor]
         fft_sig=abs(fft_sig)
-        if len(freq_mask)!=0:
-            fft_sig[freq_mask == False] = np.nan
-        #print(fft_sig,mask)
+        # if len(freq_mask)!=0:
+        #     fft_sig[freq_mask == False] = np.nan
+        #     fft_sig=fft_sig[freq_mask]
         # if normalize == True:
         #     fft_sig *= (1. / fft_sig.max())
         # if log == True:
@@ -105,19 +108,22 @@ def spectrogram(sig, window_size=256, step_scale=4, zer_pad=2, time_array=None,f
             plt.figure('sfft')
             plt.clf()
             print(i, t, t + window_size, len(sig[t:t + window_size]))
-            plt.plot(sig[t:t + window_size], 'b')
-            plt.plot(window_func, 'k')
-            plt.plot(new_sig, 'g')
+            plt.plot(sig[t:t + window_size], 'b',label='signal')
+            plt.plot(window_func, 'k',label='window')
+            plt.plot(new_sig, 'r',label='signal w/ window')
+            plt.legend(loc='best')
             plt.twinx()
-            plt.plot(fft_sig, 'r')
+            plt.plot(fft_sig, 'c')
             plt.draw()
             input('')
 
         matrix[i] = fft_sig
 
+    if len(freq_mask)!=0:
+        matrix=matrix[:,freq_mask]
+
     if normalize == True:
-        mat=matrix[:,freqs_window[0]+1:freqs_window[1]]
-        matrix /= mat.max(axis=1)[:, None]
+        matrix /= matrix.max(axis=1)[:, None]
 
     if log == True:
         matrix = np.log(matrix)
@@ -138,7 +144,7 @@ def eval_beat_freq(time_array,window_size,step_scale=4, zer_pad=1,fft_shift=0):
             # time array for spectrogram
         # SFFT step size,
 
-    time_spec = np.linspace(time_array[window_size], time_array[-window_size], num=(len(time_array) - window_size)*step_scale / window_size)
+    time_spec = np.linspace(time_array[window_size/2], time_array[-window_size/2], num=(len(time_array) - window_size)*step_scale / window_size)
 
     return time_spec,beat_freq
 
@@ -181,52 +187,3 @@ def _butter_filter(sig, b, a, zi):
 
     # Use filtfilt to apply the filter.
     return filtfilt(b, a, sig)
-
-if __name__ == '__main__':
-    tem = np.arange(1024 * 4)
-    w = tem * 0.0001
-    sinal = np.sin(tem * w * np.pi)
-    win=32
-    zer_pad=2
-    step_scale=4
-    import matplotlib.pyplot as plt
-    import time
-
-    print('\n time cost:')
-    # measure custom spectrogram time
-    time0=time.time()
-    time_spec,beat_freq=eval_beat_freq(tem,window_size=win,step_scale=step_scale,zer_pad=zer_pad)
-    freq_min,freq_max=0.1,0.4
-    # mask=[]
-    fmin,fmax,mask=eval_mask(beat_freq,win,freq_min,freq_max,zer_pad=zer_pad)
-    #print(len(mask),fmin,fmax,len(beat_freq))
-
-    mat_cs = spectrogram(
-        sinal, window_size=win, zer_pad=zer_pad, step_scale=step_scale, freq_mask=mask)
-    time1=time.time()
-    print('\nCUSTOM: {0} ms'.format(1000*(time1 - time0)))
-
-    plt.subplot(3,1,1)
-    plt.plot(tem,sinal)
-    plt.title(' signal')
-    plt.subplot(3,1,2)
-    plt.contourf(time_spec, beat_freq, mat_cs.transpose())
-    plt.plot(tem, w, 'k', lw=2)
-    plt.ylim(freq_min,freq_max)
-    plt.title('custom')
-
-    # measure scipy spectrogram time
-    time0=time.time()
-    freqs,tempo,mat_sp =signal.spectrogram(sinal,fs=1,nperseg=win*zer_pad,noverlap=(1-1/step_scale)*win)
-    time1=time.time()
-    print('\nSCIPY: {0} ms'.format(1000*(time1 - time0)))
-    print('\ntime resolution:\n CUSTOM: {} \t SCIPY: {}'.format(len(time_spec),len(tempo)))
-    print('\ndark line is simulated frequency\n')
-
-    plt.subplot(3,1,3)
-    plt.contourf(tempo,freqs, mat_sp)
-    plt.plot(tem, w, 'k', lw=2)
-    plt.ylim(freq_min,freq_max)
-    plt.title('scipy')
-    plt.tight_layout()
-    plt.show()

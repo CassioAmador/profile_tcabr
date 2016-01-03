@@ -9,9 +9,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from os import chdir, listdir, path, getcwd
+import sys
 
 
-shot_number = 33708
+if len(sys.argv) < 1:
+    shot_number=int(open('shot_number.txt','r').read())
+else:
+    if (len(sys.argv) == 1) & ("py" in sys.argv[0]):
+        shot_number=int(open('shot_number.txt','r').read())
+    else:    
+        shot_number = int(sys.argv[1])
 prof_folder = path.join(getcwd(), "..", "PROC_FILES", "%s" % shot_number)
 chdir(prof_folder)
 ne = np.load('ne.npy')

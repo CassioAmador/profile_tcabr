@@ -15,7 +15,14 @@ import proc_profile_abel_inversion as pp
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)
-shot = pp.ProcProfile(33708)
+if len(sys.argv) < 1:
+    shot_number=int(open('shot_number.txt','r').read())
+else:
+    if (len(sys.argv) == 1) & ("py" in sys.argv[0]):
+        shot_number=int(open('shot_number.txt','r').read())
+    else:    
+        shot_number = int(sys.argv[1])
+shot = pp.ProcProfile(shot_number)
 sweeps_average = 33
 
 shot.reference_gd(all_shot=1, sw_clustersize=sweeps_average)
