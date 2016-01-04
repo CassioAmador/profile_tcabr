@@ -32,6 +32,7 @@ def spectrogram(sig, window_size=256, step_scale=4, zer_pad=2, time_array=None,f
     """
 
     # alias for sig length
+    sig=np.concatenate((np.zeros(window_size/4),sig,np.zeros(window_size/4)))
     N = len(sig)
 
     # SFFT step size,
@@ -144,7 +145,7 @@ def eval_beat_freq(time_array,window_size,step_scale=4, zer_pad=1,fft_shift=0):
             # time array for spectrogram
         # SFFT step size,
 
-    time_spec = np.linspace(time_array[window_size/2], time_array[-window_size/2], num=(len(time_array) - window_size)*step_scale / window_size)
+    time_spec = np.linspace(time_array[0], time_array[-1], num=(len(time_array))*step_scale / window_size)
 
     return time_spec,beat_freq
 
