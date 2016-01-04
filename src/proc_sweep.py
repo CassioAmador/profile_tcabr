@@ -180,7 +180,7 @@ class ProcSweep(ReadSignal):
         if channel not in self.Dt_DF.keys():
             tem = np.linspace(0, self.sweep_dur, self.sweep_size)
             tem = tem[self.mask_probe_freq[channel]]
-            self.time_spec, beat_freq = cs.eval_beat_freq(
+            time_spec, beat_freq = cs.eval_beat_freq(
                 tem, window_size=window, step_scale=step_scale, zer_pad=zer_pad)
             fmin, fmax, mask_bf = cs.eval_mask(beat_freq, window, beating_freq_filter[
                                                0], beating_freq_filter[1], zer_pad=zer_pad)
@@ -194,9 +194,7 @@ class ProcSweep(ReadSignal):
                  self.probing_frequency[channel][0])
 
             # X is and array with the probing frequency.
-            self.X[channel] = np.linspace(self.probing_frequency[channel][
-                                          window / 2], self.probing_frequency[channel][-window / 2], \
-                                          (len(tem) - window) * step_scale / window)
+            self.X[channel]=np.linspace(self.freqs_start[channel], self.freqs_end[channel], num=(len(tem)-window/2)*step_scale / window)
 
             self.delta_freq[channel] = self.X[channel][1] - self.X[channel][0]
 
@@ -214,4 +212,4 @@ class ProcSweep(ReadSignal):
         mat_cs = cs.spectrogram(
             sig, window_size=window, zer_pad=zer_pad, step_scale=step_scale, normalize=normal, freq_mask=self.mask_bf[channel])
 
-        return abs(mat_cs)
+        return mat_cs
