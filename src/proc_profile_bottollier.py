@@ -18,16 +18,18 @@ const = 41.91690043903363
 # c/4*pi
 const_inv = 0.023856725796184714
 
+
 def area_prev(n, freqs_prob, pos):
     """Evaluates phase from known part of plasma"""
 
     # frequency times refraction index
-    refrac_index = rf.refrac(freqs_prob[:n + 1], freqs_prob[n])
+    refrac_index = rf.refrac(freqs_prob[:n], freqs_prob[n])
     area = const * freqs_prob[n] * \
-        integrate.trapz(refrac_index, pos[:n + 1])
+        integrate.trapz(refrac_index, pos[:n])
     return area
 
-def eval_pos(n, freqs_prob, pos, phase_cur,factor=2/3):
+
+def eval_pos(n, freqs_prob, pos, phase_cur, factor=2/3):
     """Evaluates new position"""
 
     area_dif = factor * freqs_prob[n] * \
@@ -38,13 +40,14 @@ def eval_pos(n, freqs_prob, pos, phase_cur,factor=2/3):
         phase_prev = area_prev(n, freqs_prob, pos)
     return pos[n - 1] + const_inv * (phase_cur - phase_prev + np.pi / 2) / (area_dif)
 
-def find_pos(freqs_prob, phase,factor=2/3):
+
+def find_pos(freqs_prob, phase, factor=2/3):
     """Iterates over all frequencies to evaluate their reflection distance"""
 
     pos = np.zeros(len(freqs_prob))
     r0 = 0
     for n in range(1, len(freqs_prob)):
-        pos[n] = eval_pos(n, freqs_prob, pos, phase[n],factor=factor)
+        pos[n] = eval_pos(n, freqs_prob, pos, phase[n], factor=factor)
     return pos + r0
 
 
@@ -53,23 +56,23 @@ class ProcProfile(ProcGroupDelay):
     """Recreate density profile with the Bottolier-Curtet method,
     from phase evaluated in ProcGroupDelay"""
 
-    def __init__(self, shot, tipo="data", save_locally=1,factor=2/3):
+    def __init__(self, shot, tipo="data", save_locally=1, factor=2 / 3):
         self.version = 1.0
         # inherit from ProcGroupDealy class
-        self.factor=factor
+        self.factor = factor
         ProcGroupDelay.__init__(self, shot, tipo, save_locally)
 
     def profile(self):
         """Creates profile array"""
 
         self.eval_phase()
-        self.pos = find_pos(self.freqs[1:], self.phi,factor=self.factor)
+        self.pos = find_pos(self.freqs[1:], self.phi, factor=self.factor)
 
 if __name__ == "__main__":
     shot = ProcProfile(32111)
     shot.reference_gd()
     shot.eval_freq_overlap()
-    shot.prepare_gd(6666,2)
+    shot.prepare_gd(6666, 2)
     shot.profile()
     print('\nplasma position (cm):')
-    print(shot.pos*1e2)
+    print(shot.pos * 1e2)
