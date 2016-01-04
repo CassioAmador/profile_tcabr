@@ -145,7 +145,7 @@ def eval_beat_freq(time_array,window_size,step_scale=4, zer_pad=1,fft_shift=0):
             # time array for spectrogram
         # SFFT step size,
 
-    time_spec = np.linspace(time_array[0], time_array[-1], num=(len(time_array))*step_scale / window_size)
+    time_spec = np.linspace(time_array[0], time_array[-1], num=-2+((len(time_array))*step_scale / window_size))
 
     return time_spec,beat_freq
 
