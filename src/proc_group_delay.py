@@ -95,15 +95,15 @@ class ProcGroupDelay(ProcSweep):
             self.freq_ka_min = self.X['Ka'][0]
             delta_freq_gap = self.freq_ka_min - self.freq_k_max
             if delta_freq_gap < 0:
-                # index position of overlap in K band:
-                self.cmax = np.where((self.X['K'] - min(self.X['Ka'])) > 0)[0]
+                # index position of overlap in K band
+                self.cmax = np.where((self.X['K'] - min(self.X['Ka'])) > 0)[0][0]
                 # frequency in K band that starts to overlap
                 self.freq_k_max = self.X['K'][self.cmax]
-                # index position of overlap in Ka ban
-                self.cmin = (abs(self.X['Ka'] - max(self.X['K']))).argmin()
+                # index position of overlap in Ka band
                 self.cmin = np.where(
-                    (self.X['Ka'] - max(self.X['K'])) < 0)[-1] + 1
+                    (self.X['Ka'] - max(self.X['K'])) < 0)[0][-1] + 1
                 # frequency in Ka band that finishs the overlap
+                print(self.cmin,self.cmax)
                 self.freq_ka_min = self.X['Ka'][self.cmin]
                 # creates an array with all the overlapping frequencies
                 self.freqs_over = np.sort(np.concatenate(
