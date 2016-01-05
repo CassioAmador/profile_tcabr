@@ -71,8 +71,8 @@ class ProcSweep(ReadSignal):
         that seems to be physic relevant. But, depending on the size of the spectrogram, they are current
         out because of the window size."""
         self.probing_freq_lim = {}
-        self.probing_freq_lim['K'] = (16, 100)
-        self.probing_freq_lim['Ka'] = (24, 100)
+        self.probing_freq_lim['K'] = (17, 100)
+        self.probing_freq_lim['Ka'] = (26.5, 100)
         self.freqs_start = {}
         self.freqs_end = {}
         self.probing_frequency = {}
@@ -194,7 +194,8 @@ class ProcSweep(ReadSignal):
                  self.probing_frequency[channel][0])
 
             # X is and array with the probing frequency.
-            self.X[channel]=np.linspace(self.freqs_start[channel], self.freqs_end[channel], num=(len(tem)-window/2)*step_scale / window)
+            self.X[channel] = self.freqs_start[
+                channel] + time_spec / self.Dt_DF[channel]
 
             self.delta_freq[channel] = self.X[channel][1] - self.X[channel][0]
 
