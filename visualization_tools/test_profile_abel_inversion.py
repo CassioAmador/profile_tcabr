@@ -6,7 +6,7 @@ import sys
 if './../src/' not in sys.path:
     sys.path.insert(0, './../src/')
 
-import proc_profile_abel_inversion as ppa
+import proc_profile_abel as ppa
 import ref_functions as rf
 
 if len(sys.argv) < 1:
