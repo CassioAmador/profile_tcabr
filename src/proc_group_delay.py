@@ -47,9 +47,9 @@ class ProcGroupDelay(ProcSweep):
             if all_shot == 0:
                 print(self.sweep_cur)
             matrix_k = self.spectrogram(
-                'K', figure=sweep + 1, normal=0, beating_freq_filter=(4, 15),window=window,step_scale=step_scale, zer_pad=zer_pad)
+                'K', figure=sweep + 1, normal=0, beating_freq_filter=(5, 14),window=window,step_scale=step_scale, zer_pad=zer_pad)
             matrix_ka = self.spectrogram(
-                'Ka', figure=sweep + 1, normal=0, beating_freq_filter=(5, 17),window=window,step_scale=step_scale, zer_pad=zer_pad)
+                'Ka', figure=sweep + 1, normal=0, beating_freq_filter=(4, 15),window=window,step_scale=step_scale, zer_pad=zer_pad)
             if hasattr(self, 'matrix_k_mean'):
                 self.matrix_k_mean += matrix_k
                 self.matrix_ka_mean += matrix_ka
@@ -71,17 +71,17 @@ class ProcGroupDelay(ProcSweep):
         when there is no plasma"""
         self.average_specgram(sweeps=sw_clustersize,
                               sweep_ini=1, all_shot=all_shot)
-        self.gd_k0 = self.Y['K'][self.matrix_k_mean.argmax(axis=1)] - wall_corr
+        self.gd_k0 = self.Y['K'][self.matrix_k_mean.argmax(axis=0)] - wall_corr
         self.gd_ka0 = self.Y['Ka'][
-            self.matrix_ka_mean.argmax(axis=1)] - wall_corr
+            self.matrix_ka_mean.argmax(axis=0)] - wall_corr
 
     def plasma_gd(self, sweep_cur=1000, sw_clustersize=8, all_shot=0):
         """Evaluate group delay for a cluster of sweeps, and subtracts
         the reference to find the group delay from the limiter"""
         self.average_specgram(sweeps=sw_clustersize,
                               sweep_ini=sweep_cur, all_shot=all_shot)
-        self.gd_k_mean = self.Y['K'][self.matrix_k_mean.argmax(axis=1)]
-        self.gd_ka_mean = self.Y['Ka'][self.matrix_ka_mean.argmax(axis=1)]
+        self.gd_k_mean = self.Y['K'][self.matrix_k_mean.argmax(axis=0)]
+        self.gd_ka_mean = self.Y['Ka'][self.matrix_ka_mean.argmax(axis=0)]
         self.gd_k = self.gd_k_mean - self.gd_k0
         self.gd_ka = self.gd_ka_mean - self.gd_ka0
 

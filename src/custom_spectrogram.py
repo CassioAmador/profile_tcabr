@@ -130,9 +130,9 @@ def spectrogram(sig, window_size=256, step_scale=4, zer_pad=2, time_array=None,f
         matrix = np.log(matrix)
 
     if time_array is not None:
-        return matrix, time_spec, beat_freq
+        return matrix.transpose(), time_spec, beat_freq
     else:
-        return matrix
+        return matrix.transpose()
 
 def eval_beat_freq(time_array,window_size,step_scale=4, zer_pad=1,fft_shift=0):
     # evaluates acquisition rate

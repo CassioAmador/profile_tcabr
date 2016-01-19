@@ -37,8 +37,7 @@ class ProcSweep(ReadSignal):
         started, with the 'time' channel (channel 4)."""
         self.read_channel('time', self.save_locally)
         # find min value for data, in the first 2 sweeps
-        mindata = self.bindata['time'][:self.rate * 2 *
-                                       (self.sweep_dur + self.interv_sweep)].min()
+        mindata = self.bindata['time'][:self.rate * 2 * (self.sweep_dur + self.interv_sweep)].min()
         # find all points with this value
         zeros = np.where(self.bindata['time'] == mindata)[0]
         # mark only the first minimum for each trigger
@@ -71,17 +70,15 @@ class ProcSweep(ReadSignal):
         that seems to be physic relevant. But, depending on the size of the spectrogram, they are current
         out because of the window size."""
         self.probing_freq_lim = {}
-        self.probing_freq_lim['K'] = (17, 100)
-        self.probing_freq_lim['Ka'] = (26.5, 100)
-        self.freqs_start = {}
-        self.freqs_end = {}
+        self.probing_freq_lim['K'] = (18.55, 100)
+        self.probing_freq_lim['Ka'] = (26.8, 100)
+        return
         self.probing_frequency = {}
         self.mask_probe_freq = {}
         for channel in ('K', 'Ka'):
             probe_freq = np.linspace(
                 self.freq_start, self.freq_end, self.sweep_size) * self.chan_factor[channel]
-            self.mask_probe_freq[channel] = np.logical_and(probe_freq >= self.probing_freq_lim[
-                                                           channel][0], probe_freq <= self.probing_freq_lim[channel][1])
+            self.mask_probe_freq[channel] = np.logical_and(probe_freq >= self.probing_freq_lim[channel][0], probe_freq <= self.probing_freq_lim[channel][1])
 
             self.probing_frequency[channel] = probe_freq[
                 self.mask_probe_freq[channel]]
@@ -104,15 +101,25 @@ class ProcSweep(ReadSignal):
             self.read_channel(channel, self.save_locally)
         if hasattr(self, 'single_sweep_data') == False:
             self.single_sweep_data = {}
-        self.single_sweep_data[channel] = self.bindata[
-            channel][samples_ini:samples_end][self.mask_probe_freq[channel]]
+        self.single_sweep_data[channel] = self.bindata[channel][samples_ini:samples_end]
 
     def single_sweep_time(self, channel, time=30):
         """same as read_single_sweep, but it reads int time (ms)"""
         self.time2sweep(time)
         self.read_single_sweep(channel, self.sweep_cur)
 
-    def signal_filter(self, channel, freqs=(1e3, 15e3)):
+    def bandpass_kaiser(self, channel,freqs=(1, 15)):
+        ntaps = 16
+        nyq = 0.5 * self.rate
+        width = 1.6
+        atten = signal.kaiser_atten(ntaps, width / nyq)
+        beta = signal.kaiser_beta(atten)
+        taps = signal.firwin(ntaps, [freqs[0], freqs[1]], nyq=nyq, pass_zero=False,
+                      window=('kaiser', beta), scale=False)
+        newsig = signal.filtfilt(taps_kaiser16, 1.0, self.single_sweep_data[channel], padlen=500)
+        return newsig
+
+    def signal_filter(self, channel, freqs=(1, 15)):
         """Filter signal from specific channel. A FFT is performed in
         the signal, and the result is multiplied by a window function
         (kaiser function), which nulls the undesired beating
@@ -128,7 +135,7 @@ class ProcSweep(ReadSignal):
         fmin, fmax = freqs
         # creates the beating frequency axis, and finds the position of
         # the frequency limits in the axis
-        fft_freq = np.linspace(0, self.rate * 1e3 / 2.,
+        fft_freq = np.linspace(0, self.rate  / 2.,
                                num=zer_pad_filter * N / 2)
         cmin = (abs(fft_freq - fmin)).argmin()
         cmax = (abs(fft_freq - fmax)).argmin()
@@ -159,6 +166,49 @@ class ProcSweep(ReadSignal):
         p.ylabel("beating signal")
 
     def spectrogram(self, channel, window=256, step_scale=16, zer_pad=8, log=0,
+                     group_delay=1, figure=0, normal=0, filtered=1,
+                     beating_freq_filter=(1e3, 15e3), probing_freqs=(0, 100)):
+        """Evaluate and plot spectrogram (SFFT) of beating signal.
+        Some parameters listed (others can be found in the function):
+        group_delay=1 evaluates group delay.
+                    0 evaluates beating frequency
+        normal=1 normalize spectrum
+        log=0
+            1 for log spectrogram
+        """
+
+        if filtered == 1:
+            sig = self.signal_filter(channel, beating_freq_filter)
+        else:
+            sig = self.single_sweep_data[channel]
+
+        nfft = int(1.25 * self.rate)
+        f, t, Sxx = signal.spectrogram(sig, self.rate, nperseg=nfft, noverlap=nfft-1, window=signal.get_window('hann', nfft), nfft=1024)
+        if normal == 1:
+            Sxx = Sxx / Sxx.max(axis=0)
+
+        if not hasattr(self, 'Dt_DF'):
+            self.Dt_DF = {}
+        if channel not in self.Dt_DF.keys():
+            # Inverse of dF/dt sweeping rate:
+            self.Dt_DF[channel] = self.sweep_dur / ((self.freq_end - self.freq_start) * self.chan_factor[channel])
+
+        if not hasattr(self, 'X'):
+            self.X = {}
+        if not hasattr(self, 'Y'):
+            self.Y = {}
+        # X is and array with the probing frequency.
+        self.X[channel] = (self.freq_start + (self.freq_end-self.freq_start)*t/t[-1]) * self.chan_factor[channel]
+        mask_probe_freq = np.logical_and(self.X[channel] > self.probing_freq_lim[channel][0], self.X[channel] < self.probing_freq_lim[channel][1])
+        self.X[channel] = self.X[channel][mask_probe_freq].copy()
+        # Y is the beating frequency, in MHz, or the group delay, in ns
+        self.Y[channel] = f.copy()
+        if group_delay == 1:
+            # group delay in ns
+            self.Y[channel] *= self.Dt_DF[channel]
+        return Sxx[:, mask_probe_freq]
+
+    def spectrogram2(self, channel, window=256, step_scale=16, zer_pad=8, log=0,
                     group_delay=1, figure=0, normal=0, filtered=0,
                     beating_freq_filter=(1, 15)):
         """Evaluate and plot spectrogram (SFFT) of beating signal.

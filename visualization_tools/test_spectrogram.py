@@ -18,7 +18,7 @@ def main(argv):
             shot_number = int(argv[1])
     fig, ax = plt.subplots()
     plt.subplots_adjust(bottom=0.25)
-    shot = ppb.ProcProfile(33708)
+    shot = ppb.ProcProfile(shot_number)
 
     shot.reference_gd(all_shot=1)
     cluster = 20
